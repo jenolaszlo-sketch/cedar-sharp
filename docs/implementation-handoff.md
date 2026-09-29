@@ -1,8 +1,8 @@
 # Implementation plan
 
-Updated 2026-09-28 after review against LatticeDBSharp's native build/package CI
-and CactusNeedleSharp's package metadata/content checks. Implementation is in
-progress; the verification ledger is authoritative for completed evidence.
+Updated 2026-09-29 after review against LatticeDBSharp's native build/package CI
+and CactusNeedleSharp's package metadata/content checks. The initial wrapper and
+three-platform CI gate are complete; the verification ledger records evidence.
 
 ## First usable delivery
 
@@ -24,7 +24,7 @@ progress; the verification ledger is authoritative for completed evidence.
 6. Assemble only those verified assets into a NuGet archive with manifests,
    README and licenses. Verify exact asset inventory and hashes; run clean
    package consumers on every RID with .NET 8 and .NET 10. Keep packaging opt-in
-   until all platform gates pass; publishing remains a separate action.
+   until a release is approved; publishing remains a separate action.
 
 ## Acceptance details
 
@@ -52,5 +52,5 @@ release. Hufu's adapter and fixtures can then consume this generic package and
 apply its stricter diagnostic handling without altering Cedar semantics.
 
 Symbolic analysis and solver lifecycle remain a separate optional package.
-Remote repository creation, publication and Hufu runtime changes are separate
-from this implementation. Do not claim the CI matrix passed until it ran.
+NuGet publication and Hufu runtime changes remain separate from the wrapper.
+The executed CI matrix is linked in the verification ledger.

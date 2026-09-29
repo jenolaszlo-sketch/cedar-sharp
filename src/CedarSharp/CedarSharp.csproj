@@ -11,6 +11,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>cedar;authorization;policy;access-control;native</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable Condition="'$(CedarSharpEnablePack)' != 'true'">false</IsPackable>
     <IsPackable Condition="'$(CedarSharpEnablePack)' == 'true'">true</IsPackable>
   </PropertyGroup>

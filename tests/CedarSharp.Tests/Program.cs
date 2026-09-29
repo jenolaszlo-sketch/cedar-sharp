@@ -40,6 +40,14 @@ Add("named permit and forbid precedence", () => {
     var r = engine.Authorize(new(alice, read, report, policies));
     Assert(r.Decision == CedarDecision.Deny && r.DeterminingPolicies.SequenceEqual(new[] { "mandatory-deny" }));
 });
+Add("policy inputs are copied snapshots", () => {
+    var source = new Dictionary<string, string> { ["allow"] = "permit(principal, action, resource);" };
+    var policies = CedarPolicySet.FromPolicies(source);
+    source["allow"] = "forbid(principal, action, resource);";
+    source.Clear();
+    var result = engine.Authorize(new(alice, read, report, policies));
+    Assert(result.Decision == CedarDecision.Allow && result.DeterminingPolicies.Contains("allow"));
+});
 Add("conditions and default deny", () => {
     var policy = "permit(principal, action, resource) when { context.trusted };";
     Assert(engine.Authorize(Request(policy, "{\"trusted\":true}")).Decision == CedarDecision.Allow);
@@ -105,8 +113,8 @@ Add("invalid input does not authorize", () => {
     Throws<JsonException>(() => Request("", "{"));
     Throws<ArgumentException>(() => Request("", "[]"));
     Throws<ArgumentException>(() => engine.CheckContext("{}", schema));
-    Throws<CedarBridgeException>(() => engine.CheckPolicies(CedarPolicySet.FromJson("{\"unknown\":true}")));
-    Throws<CedarBridgeException>(() => engine.Authorize(Request("", "{\"x\":1,\"x\":2}")));
+    Throws<CedarInputException>(() => engine.CheckPolicies(CedarPolicySet.FromJson("{\"unknown\":true}")));
+    Throws<CedarInputException>(() => engine.Authorize(Request("", "{\"x\":1,\"x\":2}")));
     Throws<ArgumentException>(() => CedarPolicySet.FromText(new string('x', 16 * 1024 * 1024 + 1)));
 });
 Add("concurrent isolation and repeated output ownership", () => {

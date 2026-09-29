@@ -9,7 +9,7 @@ dotnet run --project tests/CedarSharp.Tests -c Release -f net10.0
 ```
 
 It checks decisions, forbid/hierarchy semantics, Allow-with-errors, structured
-diagnostics, templates, parsing vs validation, schema/data checks, Unicode,
+diagnostics, templates, copied policy snapshots, parsing vs validation, schema/data checks, Unicode,
 invalid inputs, repeated/concurrent calls and loader failure probes in clean
 subprocesses. It exits nonzero on failure.
 

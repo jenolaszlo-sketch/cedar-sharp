@@ -19,7 +19,7 @@ try {
     try { [xml] $nuspec = $reader.ReadToEnd() } finally { $reader.Dispose() }
     if ($nuspec.package.metadata.id -cne 'CedarSharp') { throw 'Unexpected package ID.' }
     if ($nuspec.package.metadata.version -cne $ExpectedVersion) { throw 'Unexpected package version.' }
-    foreach ($required in @('README.md', 'LICENSE', 'NOTICE', 'lib/net8.0/CedarSharp.dll', 'lib/net10.0/CedarSharp.dll')) {
+    foreach ($required in @('README.md', 'LICENSE', 'NOTICE', 'lib/net8.0/CedarSharp.dll', 'lib/net8.0/CedarSharp.xml', 'lib/net10.0/CedarSharp.dll', 'lib/net10.0/CedarSharp.xml')) {
         if (@($entries | Where-Object { $_ -ceq $required }).Count -ne 1) { throw "Package must contain exactly one '$required'." }
     }
     $contracts = @(

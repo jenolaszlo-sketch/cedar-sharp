@@ -40,9 +40,10 @@ Console.WriteLine(engine.GetVersion());
 A successful call (`IsSuccess`) means Cedar evaluated the request. It does not
 mean access was allowed or evaluation was error-free. `Decision` is nullable:
 Cedar parsing failures populate `Errors` and have no decision. Native loading,
-ABI, marshalling or transport failures throw `CedarBridgeException`; malformed
-managed arguments throw standard argument/JSON exceptions. No failure becomes
-an authorization grant or a fabricated Cedar denial.
+ABI, output-decoding or transport failures throw `CedarBridgeException`.
+Invalid CLR arguments or JSON syntax throw standard argument/JSON exceptions;
+a structurally invalid Cedar call envelope throws `CedarInputException`.
+No failure becomes an authorization grant or a fabricated Cedar denial.
 
 ```csharp
 var schema = CedarSchema.FromText("""
@@ -72,6 +73,7 @@ encoding, including entity and extension escapes. All results retain the full
 upstream `Raw` JSON alongside typed diagnostics, related errors and source ranges
 (UTF-8 byte offsets). Sets of determining IDs/errors have no ordering guarantee.
 
+The NuGet package includes XML documentation for the public API.
 Instances may be shared between threads. Calls are synchronous and parse inputs
 per evaluation. The native library lives for the process lifetime; no disposal
 is required. There are no cancellation or hard resource-deadline guarantees.

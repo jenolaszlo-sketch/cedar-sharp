@@ -5,6 +5,19 @@ using System.Text.Json;
 
 namespace CedarSharp;
 
+// The numeric values are the stable ABI 1 operation IDs in docs/native-boundary.md.
+internal enum CedarOperation : uint
+{
+    Version = 0,
+    Authorize = 1,
+    ValidatePolicies = 2,
+    CheckPolicies = 3,
+    CheckSchema = 4,
+    CheckEntities = 5,
+    CheckContext = 6,
+    CheckRequest = 7
+}
+
 internal sealed unsafe class NativeBridge
 {
     private static readonly Lazy<NativeBridge> Loaded = new(() => new NativeBridge());
@@ -47,7 +60,7 @@ internal sealed unsafe class NativeBridge
                 if (abi() != 1) throw new CedarBridgeException("Incompatible CedarSharp native ABI; expected version 1.");
                 call = (delegate* unmanaged[Cdecl]<uint, byte*, nuint, Buffer*, uint>)NativeLibrary.GetExport(library, "cedarsharp_call_v1");
                 free = (delegate* unmanaged[Cdecl]<Buffer, void>)NativeLibrary.GetExport(library, "cedarsharp_free_v1");
-                var version = Call(0, "{}"u8.ToArray());
+                var version = Call(CedarOperation.Version, "{}"u8.ToArray());
                 var features = JsonWire.Array(version, "features", x => x.GetString() ?? throw new JsonException("Null feature."));
                 Version = new(version.GetProperty("abiVersion").GetUInt32(), JsonWire.String(version, "sdkVersion"),
                     JsonWire.String(version, "languageVersion"), JsonWire.String(version, "bridgeVersion"),
@@ -65,17 +78,19 @@ internal sealed unsafe class NativeBridge
         { throw new CedarBridgeException($"Could not load verified CedarSharp native runtime for {rid} from '{path}': {ex.Message}", innerException: ex); }
     }
 
-    internal JsonElement Call(uint operation, byte[] input)
+    internal JsonElement Call(CedarOperation operation, byte[] input)
     {
         if (input.Length > JsonWire.MaxInputBytes) throw new ArgumentException("Cedar input exceeds 16 MiB.", nameof(input));
         Buffer output = default;
         try
         {
             uint status;
-            fixed (byte* data = input) status = call(operation, data, (nuint)input.Length, &output);
+            fixed (byte* data = input) status = call((uint)operation, data, (nuint)input.Length, &output);
             if (output.Data == null || output.Length == 0 || output.Length > 64 * 1024 * 1024)
                 throw new CedarBridgeException("Native bridge returned an invalid output buffer.", status);
             using var doc = JsonDocument.Parse(new ReadOnlySpan<byte>(output.Data, checked((int)output.Length)).ToArray(), new JsonDocumentOptions { MaxDepth = 256 });
+            if (status == 1)
+                throw new CedarInputException($"Cedar JSON input was rejected: {JsonWire.String(doc.RootElement, "message")}");
             if (status != 0)
                 throw new CedarBridgeException($"Native Cedar bridge failed: {JsonWire.String(doc.RootElement, "message")}", status);
             return doc.RootElement.Clone();

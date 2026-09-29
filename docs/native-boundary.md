@@ -46,9 +46,11 @@ remain valid input data. Duplicate keys are rejected where upstream rejects them
 
 Status 0 means a complete Cedar answer, including Cedar's `failure` answer;
 authorization Deny is not a boundary failure. Status 1 is invalid boundary input,
-2 unsupported operation, 3 caught panic, and 4 oversized output. Boundary errors
-use a JSON object with `message`. Recoverable Rust unwinding is caught. Abort,
-OOM abort, stack overflow and memory faults are not promised recoverable.
+2 unsupported operation, 3 caught panic, and 4 oversized output. Managed callers
+receive `CedarInputException` for status 1 and `CedarBridgeException` for
+other nonzero statuses. Boundary errors use a JSON object with `message`.
+Recoverable Rust unwinding is caught. Abort, OOM abort, stack overflow and
+memory faults are not promised recoverable.
 
 Managed calls copy the output and free it in `finally`, including JSON decoding
 failure. A Lazy singleton verifies and retains the native library for process

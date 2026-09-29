@@ -36,7 +36,7 @@ minimum supported Windows or macOS version or a minimum Linux glibc version.
 | Remaining area | Evidence needed before claim |
 | --- | --- |
 | Minimum platform versions | Inspect produced binaries and test oldest intended Windows, macOS and glibc baselines before claiming broader support. |
-| Release | Decide versioning and publication process; keep the package opt-in until an approved release. |
+| Release | Manual trusted-publishing workflow is configured; NuGet policy and `NUGET_USER` secret must be set, then the workflow run must pass before claiming a published release. |
 | Safety | Add process-level memory/leak instrumentation, stress beyond the current repeated calls, and adversarial malformed wire fuzzing before making stronger native robustness claims. C-ABI callers must honor readable pointer/length and single-free preconditions. |
 | Deployment modes | NativeAOT, trimming, single-file and other RIDs require their own package consumer evidence. |
 | Hufu | Hufu-specific fail-closed adapter, authority versioning and resource enforcement are separate consumer work. |

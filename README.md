@@ -2,7 +2,7 @@
 
 CedarSharp is an unofficial .NET 8 / .NET 10 wrapper around the Rust [Cedar policy engine](https://github.com/cedar-policy/cedar). It calls the original `cedar-policy` implementation through a small native bridge. The Cedar project and its contributors created and maintain Cedar; this repository provides the .NET wrapper and does not claim authorship of the original engine or policy language.
 
-**Status: Windows x64, Linux x64 and macOS ARM64 CI passed; package not published.** Authorization, strict policy
+**Status: Windows x64, Linux x64 and macOS ARM64 CI passed.** Authorization, strict policy
 validation, policy/schema parsing, request/context/entity checks, structured
 diagnostics, and loaded native version discovery are implemented. Platform and
 verification evidence is tracked in [docs/verification.md](docs/verification.md).
@@ -116,6 +116,25 @@ The normal package gate requires all three verified RID assets. The local
 smoke archive is an ignored development artifact and has not qualified Linux or
 macOS.
 
+## Publishing to NuGet
+
+The separate [Publish to NuGet](.github/workflows/publish.yml) workflow is
+started manually from `main`. It runs the complete native, package, and
+six OS/framework consumer combinations at that commit, then verifies the exact
+package again before publishing it through NuGet trusted publishing. A normal
+push or CI run does not publish. The workflow publishes the version in
+`src/CedarSharp/CedarSharp.csproj`; update that version before starting a new
+release. NuGet will reject an already published version.
+
+Before the first run, add a NuGet.org trusted publishing policy for the package
+owner with repository owner `jenolaszlo-sketch`, repository `cedar-sharp`, and
+workflow file `publish.yml` (filename only). Leave the policy's environment
+empty. In this GitHub repository, set the `NUGET_USER` Actions secret to the
+NuGet.org **profile name** that owns or can publish `CedarSharp`, not the email
+address or an API key. Then choose **Actions → Publish to NuGet → Run workflow**
+on `main`. The workflow requests a short-lived API key only after verification
+has passed. See the [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing).
+
 Native assets and their SHA-256 manifests must be deployed together. The loader
 uses only an adjacent package asset or `runtimes/<rid>/native/`, verifies the
 manifest and live version, and does not search arbitrary PATH locations or
@@ -134,4 +153,4 @@ The Cedar engine and policy language are the work of the Cedar project and its
 contributors. CedarSharp is an independent wrapper, unaffiliated with the Cedar
 project and Penghou/Hufu. The [NOTICE](NOTICE) records upstream attribution;
 native packages also carry the Cedar and dependency license and notice files.
-The wrapper has not been published as a package.
+Publication status is tracked in [verification evidence](docs/verification.md).

@@ -4,11 +4,16 @@ param(
     [string] $RepositoryRoot = (Split-Path -Parent $PSScriptRoot),
     [ValidateSet('win-x64', 'linux-x64', 'osx-arm64')]
     [string[]] $ExpectedRids = @('win-x64', 'linux-x64', 'osx-arm64'),
-    [string] $ExpectedVersion = '0.1.0-preview.1'
+    [string] $ExpectedVersion
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $root = [IO.Path]::GetFullPath($RepositoryRoot)
+if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) {
+    [xml] $project = Get-Content -LiteralPath (Join-Path $root 'src/CedarSharp/CedarSharp.csproj')
+    $ExpectedVersion = [string] $project.Project.PropertyGroup.Version
+    if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) { throw 'Package version is missing from the project.' }
+}
 $resolved = (Resolve-Path -LiteralPath $PackagePath).Path
 $archive = [IO.Compression.ZipFile]::OpenRead($resolved)
 try {

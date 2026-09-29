@@ -4,6 +4,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 concurrency:
@@ -93,7 +94,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: cedarsharp-package
-          path: artifacts/packages/CedarSharp.0.1.0-preview.1.nupkg
+          path: artifacts/packages/CedarSharp.*.nupkg
           if-no-files-found: error
           retention-days: 14
 
@@ -124,4 +125,7 @@ jobs:
           path: artifacts/packages
       - name: Restore and run packaged consumer
         shell: pwsh
-        run: ./eng/Test-PackagedConsumer.ps1 -PackagePath artifacts/packages/CedarSharp.0.1.0-preview.1.nupkg -Framework ${{ matrix.framework }} -RuntimeIdentifier ${{ matrix.rid }}
+        run: |
+          $packages = @(Get-ChildItem -LiteralPath artifacts/packages -Filter 'CedarSharp.*.nupkg' -File)
+          if ($packages.Count -ne 1) { throw "Expected one CedarSharp package, found $($packages.Count)." }
+          ./eng/Test-PackagedConsumer.ps1 -PackagePath $packages[0].FullName -Framework ${{ matrix.framework }} -RuntimeIdentifier ${{ matrix.rid }}

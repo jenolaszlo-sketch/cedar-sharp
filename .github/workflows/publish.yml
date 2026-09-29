@@ -1,0 +1,73 @@
+name: Publish to NuGet
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cedarsharp-nuget-publish
+  cancel-in-progress: false
+
+jobs:
+  release-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require main branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo 'Publish to NuGet must be dispatched from main.' >&2
+            exit 1
+          fi
+
+  verify:
+    needs: release-check
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install .NET 8 and 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/download-artifact@v8
+        with:
+          name: cedarsharp-package
+          path: artifacts/packages
+      - name: Verify exact package to publish
+        id: package
+        shell: pwsh
+        run: |
+          [xml] $project = Get-Content src/CedarSharp/CedarSharp.csproj
+          $version = [string] $project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Package version is missing from the project.' }
+          $package = "artifacts/packages/CedarSharp.$version.nupkg"
+          $allPackages = @(Get-ChildItem -LiteralPath artifacts/packages -Filter '*.nupkg' -File)
+          if ($allPackages.Count -ne 1 -or $allPackages[0].Name -cne "CedarSharp.$version.nupkg") {
+            throw "Expected exactly one CedarSharp.$version.nupkg, found: $($allPackages.Name -join ', ')"
+          }
+          ./eng/Verify-NuGetPackage.ps1 -PackagePath $package -ExpectedVersion $version
+          "path=$package" >> $env:GITHUB_OUTPUT
+      - name: NuGet login (OIDC to temporary API key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push package to NuGet
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+          PACKAGE_PATH: ${{ steps.package.outputs.path }}
+        run: dotnet nuget push "$PACKAGE_PATH" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"

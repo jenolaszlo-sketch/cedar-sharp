@@ -1,8 +1,8 @@
 # Verification and release gates
 
-Updated 2026-09-29. The initial wrapper has been exercised on this Windows x64
-host. Linux x64 and macOS ARM64 are CI targets and have not yet run; there is no
-qualified three-RID package or published release.
+Updated 2026-09-29. The wrapper passed local Windows x64 testing and a complete
+CI matrix on Windows x64, Linux x64 and macOS ARM64. CI produced and verified a
+three-RID package; no package or release has been published.
 
 ## Executed on Windows x64
 
@@ -19,20 +19,24 @@ Rust toolchain because this workstation lacked the C++ linker. Build inputs are
 reproducible in the repository; the downloaded tools and binaries are ignored.
 No toolchain or package was installed system-wide or published.
 
-## CI distribution gate still required
+## Completed CI distribution gate
 
-The [CI workflow](../.github/workflows/ci.yml) builds and runs native plus
-managed tests on native Windows x64, Linux x64 and macOS ARM64 runners. It then
-assembles only verified native artifacts, verifies their hashes and license
-inventories in the actual NuGet archive, and runs clean packaged consumers on
-all three RIDs with .NET 8 and .NET 10. The workflow has not executed for this
-repository yet. macOS runner selection follows the [GitHub hosted runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners),
-which identifies `macos-15` as ARM64; the actual run must prove the target.
+[Run 36553672035](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36553672035)
+passed on commit `8ae9b26`. The native jobs ran Rust tests, built and verified
+the bridge, and passed the managed integration suite on both .NET 8 and .NET 10
+on Windows 2025 x64, Ubuntu 24.04 x64 and macOS 15 ARM64. The package job
+assembled `CedarSharp.0.1.0-preview.1.nupkg` from all three verified assets
+and checked runtime inventory, ABI manifests, hashes and dependency license
+files. Clean consumers passed for each of the three RIDs on both .NET versions
+(six combinations). The CI package is a build artifact, not a published release.
+
+The run verifies these native runner environments. It does not establish a
+minimum supported Windows or macOS version or a minimum Linux glibc version.
 
 | Remaining area | Evidence needed before claim |
 | --- | --- |
-| Linux/macOS | Native bridge build, direct Rust comparison, managed tests and packaged consumer on each native runner. Confirm glibc/minimum OS versions from produced binaries and runners. |
-| Distribution | Three native CI artifacts, full archive verification, clean six-case NuGet consumer matrix. Normal packaging stays opt-in until this passes. |
+| Minimum platform versions | Inspect produced binaries and test oldest intended Windows, macOS and glibc baselines before claiming broader support. |
+| Release | Decide versioning and publication process; keep the package opt-in until an approved release. |
 | Safety | Add process-level memory/leak instrumentation, stress beyond the current repeated calls, and adversarial malformed wire fuzzing before making stronger native robustness claims. C-ABI callers must honor readable pointer/length and single-free preconditions. |
 | Deployment modes | NativeAOT, trimming, single-file and other RIDs require their own package consumer evidence. |
 | Hufu | Hufu-specific fail-closed adapter, authority versioning and resource enforcement are separate consumer work. |

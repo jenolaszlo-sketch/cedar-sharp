@@ -2,11 +2,11 @@
 
 CedarSharp is an unofficial .NET 8 / .NET 10 wrapper around the Rust [Cedar policy engine](https://github.com/cedar-policy/cedar). It calls the original `cedar-policy` implementation through a small native bridge. The Cedar project and its contributors created and maintain Cedar; this repository provides the .NET wrapper and does not claim authorship of the original engine or policy language.
 
-**Status: Windows x64 native integration passed locally; not published.** Authorization, strict policy
+**Status: Windows x64, Linux x64 and macOS ARM64 CI passed; package not published.** Authorization, strict policy
 validation, policy/schema parsing, request/context/entity checks, structured
 diagnostics, and loaded native version discovery are implemented. Platform and
 verification evidence is tracked in [docs/verification.md](docs/verification.md).
-Packaging remains opt-in and requires the native qualification gates. Do not
+Packaging remains opt-in and requires verified native assets for every RID. Do not
 infer native support from a successful managed build.
 
 CedarSharp preserves Cedar's default deny, forbid precedence, and skip-on-error
@@ -92,7 +92,7 @@ dotnet run --project tests/CedarSharp.Tests -c Release -f net8.0
 dotnet run --project tests/CedarSharp.Tests -c Release -f net10.0
 ```
 
-The CI matrix is designed to build and execute on Windows x64, Linux x64, and macOS ARM64,
+The CI matrix builds and executes on Windows x64, Linux x64, and macOS ARM64,
 then assembles one NuGet archive and runs clean package consumers on each OS.
 macOS uses a native ARM64 runner. Linux qualification targets the CI runner's
 glibc baseline; musl, Windows ARM64 and macOS x64 are not supported by this slice.

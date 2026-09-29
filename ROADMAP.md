@@ -22,13 +22,14 @@ See [verification evidence](docs/verification.md) for commands and platform resu
 
 - [x] Implement native Windows x64, Linux x64 and macOS ARM64 CI jobs.
 - [x] Add manifests, notice staging, archive verification and clean NuGet consumers.
-- [ ] Run and pass the three-platform native and package CI matrix.
-- [ ] Qualify minimum OS/libc versions and dependency/license inventory.
-- [ ] Enable normal packaging after verified distribution evidence exists.
+- [x] Run and pass the three-platform native and package CI matrix.
+- [x] Verify the dependency/license inventory in the assembled CI package.
+- [ ] Qualify minimum OS and glibc versions beyond the CI runners.
+- [ ] Establish a versioned release and NuGet publication process.
 - [ ] Prove trimming, NativeAOT and single-file publishing before advertising them.
 
-Windows development is the local starting point. macOS/Linux qualification is
-part of the first usable distribution gate. No binaries have been published.
+The initial Windows, Linux and macOS runner matrix is qualified for the tested
+environments. No binaries have been published.
 
 ## M3: consumers and performance
 

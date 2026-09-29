@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>CedarSharp</PackageId>
+    <Version>0.1.0-preview.1</Version>
+    <Title>CedarSharp</Title>
+    <Description>Unofficial .NET wrapper around the Cedar policy engine, preserving authorization diagnostics and validation results.</Description>
+    <PackageProjectUrl>https://github.com/jenolaszlo-sketch/cedar-sharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jenolaszlo-sketch/cedar-sharp.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>cedar;authorization;policy;access-control;native</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsPackable Condition="'$(CedarSharpEnablePack)' != 'true'">false</IsPackable>
+    <IsPackable Condition="'$(CedarSharpEnablePack)' == 'true'">true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="/" />
+    <None Include="../../NOTICE" Pack="true" PackagePath="/" />
+    <None Include="../../native/staging/**/*" Exclude="../../native/staging/**/licenses/**/*;../../native/staging/**/THIRD_PARTY_NOTICES.md;../../native/staging/**/licenses.json"
+          Pack="true" PackagePath="runtimes/"
+          Link="runtimes/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../native/staging/**/*" Exclude="../../native/staging/**/*.dll;../../native/staging/**/*.so;../../native/staging/**/*.dylib;../../native/staging/**/cedarsharp-native.json"
+          Pack="true" PackagePath="third-party/" />
+  </ItemGroup>
+  <Target Name="RequireNativeAssetsForPack" BeforeTargets="GenerateNuspec" Condition="'$(CedarSharpEnablePack)' == 'true' And '$(CedarSharpLocalSmokePack)' != 'true'">
+    <Error Condition="!Exists('../../native/staging/win-x64/native/cedarsharp-native.json') Or !Exists('../../native/staging/linux-x64/native/cedarsharp-native.json') Or !Exists('../../native/staging/osx-arm64/native/cedarsharp-native.json')"
+           Text="All three native RID manifests must be staged before packing. Run the native CI and package verification gates." />
+  </Target>
+</Project>

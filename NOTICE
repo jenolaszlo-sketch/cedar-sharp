@@ -1,0 +1,14 @@
+CedarSharp
+Copyright (c) 2026 CedarSharp contributors
+
+CedarSharp is an independent, unofficial .NET integration for Cedar.
+Cedar's policy language and engine are developed by the Cedar project and its
+contributors. CedarSharp does not claim ownership of the Cedar engine or name.
+
+Native builds use cedar-policy 4.13.0, licensed Apache-2.0.
+Upstream: https://github.com/cedar-policy/cedar
+Source commit: 324d3c09fc94ab91464ec340eb81e4b167deb6f5
+
+Native build staging and packages include the licenses and notices of the
+resolved Cargo dependencies alongside each native runtime. Preserve those files
+when redistributing the native assets. No third-party .NET wrapper code is used.

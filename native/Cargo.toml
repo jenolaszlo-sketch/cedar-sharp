@@ -1,0 +1,20 @@
+[package]
+name = "cedarsharp_native"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94.0"
+publish = false
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cedar-policy = { version = "=4.13.0", default-features = false, features = ["ipaddr", "decimal", "datetime"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+panic = "unwind"
+lto = "thin"
+codegen-units = 1

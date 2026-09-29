@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <CedarSharpPackageVersion Condition="'$(CedarSharpPackageVersion)' == ''">0.1.0-preview.1</CedarSharpPackageVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CedarSharp" Version="$(CedarSharpPackageVersion)" />
+  </ItemGroup>
+</Project>

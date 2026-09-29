@@ -1,0 +1,127 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native:
+    name: Native ${{ matrix.rid }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            rid: win-x64
+            target: x86_64-pc-windows-msvc
+          - os: ubuntu-24.04
+            rid: linux-x64
+            target: x86_64-unknown-linux-gnu
+          - os: macos-15
+            rid: osx-arm64
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Rust 1.94.0
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: 1.94.0
+          target: ${{ matrix.target }}
+          cache: true
+      - name: Install .NET 8 and 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Run native tests
+        shell: pwsh
+        run: ./eng/Test-Native.ps1 -RuntimeIdentifier ${{ matrix.rid }}
+      - name: Build and stage native asset with provenance
+        shell: pwsh
+        run: ./eng/Build-Native.ps1 -RuntimeIdentifier ${{ matrix.rid }}
+      - name: Verify native asset manifest
+        shell: pwsh
+        run: ./eng/Verify-NativeStaging.ps1 -RuntimeIdentifier ${{ matrix.rid }}
+      - name: Run managed native integration tests on .NET 8
+        run: dotnet run --project tests/CedarSharp.Tests/CedarSharp.Tests.csproj -c Release -f net8.0
+      - name: Run managed native integration tests on .NET 10
+        run: dotnet run --project tests/CedarSharp.Tests/CedarSharp.Tests.csproj -c Release -f net10.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cedarsharp-native-${{ matrix.rid }}
+          path: native/staging/${{ matrix.rid }}/native/
+          if-no-files-found: error
+          retention-days: 14
+
+  pack:
+    needs: native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install .NET 8 and 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          name: cedarsharp-native-win-x64
+          path: native/staging/win-x64/native
+      - uses: actions/download-artifact@v4
+        with:
+          name: cedarsharp-native-linux-x64
+          path: native/staging/linux-x64/native
+      - uses: actions/download-artifact@v4
+        with:
+          name: cedarsharp-native-osx-arm64
+          path: native/staging/osx-arm64/native
+      - name: Restore and build managed library
+        run: dotnet build CedarSharp.slnx -c Release
+      - name: Pack with native assets and verify archive
+        shell: pwsh
+        run: ./eng/Pack.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cedarsharp-package
+          path: artifacts/packages/CedarSharp.0.1.0-preview.1.nupkg
+          if-no-files-found: error
+          retention-days: 14
+
+  package-smoke:
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04, macos-15]
+        framework: [net8.0, net10.0]
+        include:
+          - { os: windows-2025, rid: win-x64 }
+          - { os: ubuntu-24.04, rid: linux-x64 }
+          - { os: macos-15, rid: osx-arm64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install .NET 8 and 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          name: cedarsharp-package
+          path: artifacts/packages
+      - name: Restore and run packaged consumer
+        shell: pwsh
+        run: ./eng/Test-PackagedConsumer.ps1 -PackagePath artifacts/packages/CedarSharp.0.1.0-preview.1.nupkg -Framework ${{ matrix.framework }} -RuntimeIdentifier ${{ matrix.rid }}

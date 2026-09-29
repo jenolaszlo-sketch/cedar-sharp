@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CedarSharp/CedarSharp.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CedarSharp.Tests/CedarSharp.Tests.csproj" />
+  </Folder>
+</Solution>

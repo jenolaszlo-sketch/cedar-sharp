@@ -1,6 +1,11 @@
 # Verification and release gates
 
-Updated 2026-09-30. Both
+Updated 2026-09-30. [CedarSharp 1.0.0](https://www.nuget.org/packages/CedarSharp/1.0.0)
+and its symbols package are public. The [stable release section](#published-100-stable-release)
+records its completed qualification and publication. The earlier entries below
+are the chronological evidence leading to that release.
+
+Both
 [`0.1.0-preview.1`](https://www.nuget.org/packages/CedarSharp/0.1.0-preview.1)
 and [`0.2.0-preview.1`](https://www.nuget.org/packages/CedarSharp/0.2.0-preview.1)
 are published on NuGet. `0.2.0-preview.1` has a downloadable symbols package.

@@ -65,11 +65,11 @@ no raw pointers and require no disposal.
 | linux-x64 | x86_64-unknown-linux-gnu | Linux x64/glibc |
 | osx-arm64 | aarch64-apple-darwin | macOS ARM64 |
 
-These are qualification targets; see verification.md for executed evidence.
+The qualified environments are Windows Server 2025 x64, Ubuntu 24.04 x64,
+and macOS 15 ARM64 with .NET 8 and .NET 10; see [verification](verification.md).
 No cross-platform claim follows from managed compilation. No musl, osx-x64 or
-Windows ARM64 assets are selected. OS/libc minimums must be confirmed by CI and
-recorded before distribution; the runner baseline is not automatically a
-compatibility promise for older operating systems.
+Windows ARM64 assets are selected. Older OS and glibc baselines are not
+qualified.
 
 Build with Cargo --locked and explicit targets. Each staged asset carries
 `cedarsharp-native.json`: ABI/engine/bridge/toolchain, target/RID, binary SHA-256,
@@ -80,8 +80,9 @@ LICENSE and NOTICE. `defmt-parser` omits its license file and uses its declared
 Apache-2.0 option from that standard license text. The loader checks hash and expected
 identity, then queries live versions/features before authorization. It resolves
 the asset under `AppContext.BaseDirectory` (package-adjacent or its
-`runtimes/<rid>/native/` directory), which keeps single-file and NativeAOT
-deployments working. `CEDARSHARP_NATIVE_PATH` selects a self-built or vendored
+`runtimes/<rid>/native/` directory). NativeAOT is verified on each qualified
+RID; single-file publishing has not been separately qualified.
+`CEDARSHARP_NATIVE_PATH` selects a self-built or vendored
 asset; relative paths are normalized against the current directory before the
 adjacent manifest is located, and the asset is still hash- and identity-verified.
 There is no automatic download or global search.

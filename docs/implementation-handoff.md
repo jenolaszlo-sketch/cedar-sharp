@@ -1,5 +1,8 @@
 # Implementation plan
 
+Historical planning record. For current usage, see [getting started](getting-started.md);
+for release status, see [verification](verification.md).
+
 Updated 2026-09-29 after review against LatticeDBSharp's native build/package CI
 and CactusNeedleSharp's package metadata/content checks. The initial wrapper and
 three-platform CI gate are complete; the verification ledger records evidence.

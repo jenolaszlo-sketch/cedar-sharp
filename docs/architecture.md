@@ -1,6 +1,6 @@
 # CedarSharp architecture
 
-Status: Initial implementation of [ADR 0001](decisions/0001-own-cedar-binding.md).
+Current architecture for the 1.0 release. See [ADR 0001](decisions/0001-own-cedar-binding.md) for the binding decision and [verification](verification.md) for executed evidence.
 
 ## Layers
 
@@ -19,68 +19,54 @@ the pinned official Cedar engine. No network service is required for evaluation.
 
 Keep successful evaluation, policy diagnostics, and bridge failure separate.
 An evaluation result contains Cedar's decision, determining policy IDs, and all
-reported policy errors. A boolean convenience API must not erase diagnostics or
-pretend transport failure is an ordinary Cedar denial. Initially prefer the
-full result API.
+reported policy errors. `IsCleanAllow` is the strict enforcement convenience
+property; the full result retains diagnostics. Transport failure is never an
+ordinary Cedar denial.
 
-Preserve default-deny, forbid precedence, and skip-on-error behavior exactly.
-Do not silently make schema validation mandatory inside upstream-equivalent
-authorization; expose validation explicitly. Applications such as Hufu will
-require validation and schema-compliant requests before evaluating authority.
+The wrapper preserves default deny, forbid precedence, and skip-on-error
+behavior. Policy validation is explicit. Supplying a schema enables
+schema-aware parsing and, by default, request validation; it does not implicitly
+validate the policy bundle.
 
 Validation results retain actionable errors and available source locations.
-Do not conflate parsing a policy with validating it against a schema. Keep
-request/entity validation and policy validation distinct where upstream does.
-Unknown required wire fields, incompatible bridge versions, and unsupported
-operations produce explicit boundary failures.
+Policy syntax checking, strict schema validation, and request/entity checks
+remain separate. Unknown required wire fields, incompatible bridge versions,
+and unsupported operations produce explicit boundary failures.
 
 ## API scope
 
-Begin with the upstream JSON-oriented FFI surface where suitable. Use explicit
-UTF-8 buffers and typed results, preserving the complete diagnostics payload.
-Avoid inventing a broad managed entity DSL or rebuilding Cedar syntax trees
-before the first complete authorization path works.
+The bridge uses Cedar's JSON-oriented FFI with explicit UTF-8 buffers. Managed
+results preserve the complete diagnostics payload and raw upstream JSON. The
+API supplies typed request and entity helpers without rebuilding Cedar syntax
+trees.
 
-The prototype may use per-call serialized input. Measure realistic repeated
-evaluation before deciding whether immutable parsed policy/schema/entity handles
-are necessary. If introduced, own them through SafeHandle or an equivalent
-proved lifetime strategy; pin snapshots to prevent mixed policy versions.
+Calls serialize immutable request snapshots per evaluation. There is no
+stateful preparsed policy/schema/entity handle. Any future cache needs an
+explicit lifetime and versioning model.
 
-Expose synchronous evaluation honestly. Adding Task.Run wrappers does not make
-native work cancellable. Document thread safety, and do not claim cancellation
-or hard resource deadlines without an enforceable implementation.
+Evaluation is synchronous and instances are thread-safe. The bridge does not
+provide cancellation or hard resource deadlines.
 
-No implicit runtime downloads or fallback to arbitrary native libraries on the
-authorization path. Load only verified supported assets or an explicitly
-configured override whose identity is validated and reported.
+The loader uses verified supported assets or an explicitly configured override
+whose identity is validated and reported. It does not download or search for
+arbitrary native libraries.
 
-## Hufu mapping
+## Application boundary
 
-The Hufu adapter supplies tenant-scoped subjects, resolved resources, authentic
-hierarchies, normalized actions, context, and an exact versioned policy bundle.
-CedarSharp does not resolve filesystem paths, discover trust, issue grants,
-maintain revocation, or decide whether a workflow is active.
+The calling application supplies authenticated principals, resolved resources,
+authentic relationships, context, and a versioned policy bundle. It decides
+how to handle diagnostics, audit decisions, and enforce access. CedarSharp does
+not issue grants, maintain revocation, or manage workflow state. Default
+telemetry activities do not export principal/action/resource identities or
+error text.
 
-Hufu blocks on policy diagnostics, native failure, unknown authority, or stale
-execution state. CedarSharp retains the underlying engine response for precise
-audit and debugging. No secret material should be copied into default logs.
-
-## Analysis boundary
-
-Ordinary authorization answers one concrete request. Proving that every request
-allowed by one policy is allowed by another requires separate analysis and
-explicit schema/subject assumptions. Cedar's SymCC offers implication and
-equivalence checks, but it is not part of the initial bridge.
-
-Future analysis must expose unsupported features, solver timeout/unknown, and
-counterexamples. No successful sample of ordinary authorization calls constitutes
-a containment proof. Keep solver installation, process limits, and lifecycle
-separate from the runtime package.
+Authorization evaluates one concrete request. Policy implication and
+equivalence analysis are outside the current runtime API.
 
 ## References
 
 - [Cedar validation](https://docs.cedarpolicy.com/policies/validation.html)
 - [Cedar authorization](https://docs.cedarpolicy.com/auth/authorization.html)
-- [Symbolic compiler](https://github.com/cedar-policy/cedar/tree/main/cedar-policy-symcc)
 
-These links describe upstream capabilities, not features implemented by this scaffold.
+These links describe upstream Cedar behavior. The [API contract](api-contract.md)
+describes what CedarSharp exposes.

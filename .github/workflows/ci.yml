@@ -55,6 +55,15 @@ jobs:
         run: dotnet run --project tests/CedarSharp.Tests/CedarSharp.Tests.csproj -c Release -f net8.0
       - name: Run managed native integration tests on .NET 10
         run: dotnet run --project tests/CedarSharp.Tests/CedarSharp.Tests.csproj -c Release -f net10.0
+      - name: Publish and run NativeAOT smoke
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'aot-smoke'
+          dotnet publish samples/CedarSharp.AotSmoke/CedarSharp.AotSmoke.csproj -c Release -r ${{ matrix.rid }} -o $out
+          if ($LASTEXITCODE -ne 0) { throw 'NativeAOT publish failed for ${{ matrix.rid }}.' }
+          $exe = Join-Path $out ($IsWindows ? 'CedarSharp.AotSmoke.exe' : 'CedarSharp.AotSmoke')
+          & $exe
+          if ($LASTEXITCODE -ne 0) { throw 'NativeAOT smoke run failed for ${{ matrix.rid }}.' }
       - uses: actions/upload-artifact@v7
         with:
           name: cedarsharp-native-${{ matrix.rid }}
@@ -94,7 +103,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: cedarsharp-package
-          path: artifacts/packages/CedarSharp.*.nupkg
+          path: |
+            artifacts/packages/CedarSharp.*.nupkg
+            artifacts/packages/CedarSharp.*.snupkg
           if-no-files-found: error
           retention-days: 14
 
@@ -126,6 +137,6 @@ jobs:
       - name: Restore and run packaged consumer
         shell: pwsh
         run: |
-          $packages = @(Get-ChildItem -LiteralPath artifacts/packages -Filter 'CedarSharp.*.nupkg' -File)
+          $packages = @(Get-ChildItem -LiteralPath artifacts/packages -File | Where-Object { $_.Extension -eq '.nupkg' })
           if ($packages.Count -ne 1) { throw "Expected one CedarSharp package, found $($packages.Count)." }
           ./eng/Test-PackagedConsumer.ps1 -PackagePath $packages[0].FullName -Framework ${{ matrix.framework }} -RuntimeIdentifier ${{ matrix.rid }}

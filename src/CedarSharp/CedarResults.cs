@@ -15,7 +15,11 @@ public enum CedarDecision
 /// <param name="Label">Optional label for the source range.</param>
 /// <param name="Start">Inclusive UTF-8 byte offset.</param>
 /// <param name="End">Exclusive UTF-8 byte offset.</param>
-public sealed record CedarSourceLocation(string? Label, long Start, long End);
+public sealed record CedarSourceLocation(string? Label, long Start, long End)
+{
+    /// <inheritdoc />
+    public override string ToString() => Label is null ? $"[{Start}..{End})" : $"{Label} [{Start}..{End})";
+}
 
 /// <summary>Complete structured upstream diagnostic, including related diagnostics and source ranges.</summary>
 public sealed class CedarDiagnostic
@@ -39,11 +43,22 @@ public sealed class CedarDiagnostic
     internal CedarDiagnostic(JsonElement e)
     {
         Raw = e.Clone(); Message = JsonWire.String(e, "message");
-        Help = e.GetProperty("help").GetString(); Code = e.GetProperty("code").GetString();
-        Url = e.GetProperty("url").GetString(); Severity = e.GetProperty("severity").GetString();
-        SourceLocations = JsonWire.Array(e, "sourceLocations", x => new CedarSourceLocation(
-            x.GetProperty("label").GetString(), x.GetProperty("start").GetInt64(), x.GetProperty("end").GetInt64()));
-        Related = JsonWire.Array(e, "related", x => new CedarDiagnostic(x));
+        Help = JsonWire.OptionalString(e, "help"); Code = JsonWire.OptionalString(e, "code");
+        Url = JsonWire.OptionalString(e, "url"); Severity = JsonWire.OptionalString(e, "severity");
+        SourceLocations = JsonWire.OptionalArray(e, "sourceLocations", x => new CedarSourceLocation(
+            JsonWire.OptionalString(x, "label"),
+            JsonWire.RequiredInt64(x, "start"),
+            JsonWire.RequiredInt64(x, "end")));
+        Related = JsonWire.OptionalArray(e, "related", x => new CedarDiagnostic(x));
+    }
+    /// <summary>One-line human-readable summary for logs and audits. Full detail remains in <see cref="Raw"/>.</summary>
+    public override string ToString()
+    {
+        var prefix = Severity is null ? "" : $"[{Severity}] ";
+        var code = Code is null ? "" : $" ({Code})";
+        var help = Help is null ? "" : $" Help: {Help}";
+        var locations = SourceLocations.Count == 0 ? "" : $" at {string.Join(", ", SourceLocations)}";
+        return $"{prefix}{Message}{code}{locations}{help}";
     }
 }
 
@@ -53,6 +68,8 @@ public sealed class CedarDiagnostic
 public sealed record CedarPolicyDiagnostic(string PolicyId, CedarDiagnostic Error)
 {
     internal static CedarPolicyDiagnostic Read(JsonElement e) => new(JsonWire.String(e, "policyId"), new(e.GetProperty("error")));
+    /// <inheritdoc />
+    public override string ToString() => $"{PolicyId}: {Error}";
 }
 
 /// <summary>A completed Cedar call. A parsing failure has no decision; an Allow may still have policy errors.</summary>
@@ -75,7 +92,7 @@ public sealed class CedarAuthorizationResult
     internal CedarAuthorizationResult(JsonElement e)
     {
         Raw = e.Clone(); IsSuccess = JsonWire.Success(e);
-        Warnings = JsonWire.Array(e, "warnings", x => new CedarDiagnostic(x));
+        Warnings = JsonWire.OptionalArray(e, "warnings", x => new CedarDiagnostic(x));
         if (!IsSuccess) { Errors = JsonWire.Array(e, "errors", x => new CedarDiagnostic(x)); return; }
         var response = e.GetProperty("response");
         Decision = JsonWire.String(response, "decision") switch
@@ -87,6 +104,41 @@ public sealed class CedarAuthorizationResult
         DeterminingPolicies = JsonWire.Array(diagnostics, "reason", x => x.GetString() ?? throw new JsonException("Null policy ID."));
         PolicyErrors = JsonWire.Array(diagnostics, "errors", CedarPolicyDiagnostic.Read);
     }
+    /// <summary>True only for an error-free Allow. Use this for fail-closed enforcement instead of checking <see cref="Decision"/> alone.</summary>
+    /// <example>
+    /// <code>
+    /// if (!result.IsCleanAllow) return Results.Forbid();
+    /// </code>
+    /// </example>
+    public bool IsCleanAllow => IsSuccess && Decision == CedarDecision.Allow && PolicyErrors.Count == 0 && Errors.Count == 0;
+    /// <summary>True only for an error-free Deny.</summary>
+    public bool IsCleanDeny => IsSuccess && Decision == CedarDecision.Deny && PolicyErrors.Count == 0 && Errors.Count == 0;
+    /// <summary>True when Cedar completed without operation errors or policy errors, regardless of Allow or Deny.</summary>
+    public bool IsErrorFree => IsSuccess && Errors.Count == 0 && PolicyErrors.Count == 0;
+    /// <summary>Returns <see cref="CedarDecision.Allow"/> only for an error-free Allow; otherwise throws. A clean Deny throws here by design.</summary>
+    /// <exception cref="CedarAuthorizationException">The result was not an error-free Allow. The exception carries the originating result.</exception>
+    public CedarDecision RequireAllow()
+    {
+        if (IsCleanAllow) return CedarDecision.Allow;
+        throw new CedarAuthorizationException(this, DescribeFailure());
+    }
+    /// <summary>Throws when Cedar reported any operation or policy error. A clean Deny is accepted because it is still a valid decision.</summary>
+    /// <exception cref="CedarAuthorizationException">Any operation error or policy error was present. The exception carries the originating result.</exception>
+    public void EnsureNoErrors()
+    {
+        if (IsErrorFree) return;
+        throw new CedarAuthorizationException(this, DescribeFailure());
+    }
+    private string DescribeFailure()
+    {
+        if (!IsSuccess) return $"Cedar did not complete the authorization: {string.Join("; ", Errors)}";
+        if (PolicyErrors.Count > 0) return $"Authorization {Decision} had {PolicyErrors.Count} policy error(s): {string.Join("; ", PolicyErrors)}";
+        return $"Authorization decision was {Decision}.";
+    }
+    /// <inheritdoc />
+    public override string ToString() => !IsSuccess
+        ? $"Failure: {string.Join("; ", Errors)}"
+        : $"{Decision} (reasons: {string.Join(",", DeterminingPolicies)}; policyErrors: {PolicyErrors.Count}; warnings: {Warnings.Count})";
 }
 
 /// <summary>Separates a failed parse from a completed validation that found invalid policies.</summary>
@@ -109,11 +161,26 @@ public sealed class CedarValidationResult
     internal CedarValidationResult(JsonElement e)
     {
         Raw = e.Clone(); IsSuccess = JsonWire.Success(e);
-        Warnings = JsonWire.Array(e, IsSuccess ? "otherWarnings" : "warnings", x => new CedarDiagnostic(x));
+        Warnings = IsSuccess
+            ? JsonWire.Array(e, "otherWarnings", x => new CedarDiagnostic(x))
+            : JsonWire.OptionalArray(e, "warnings", x => new CedarDiagnostic(x));
         if (!IsSuccess) { Errors = JsonWire.Array(e, "errors", x => new CedarDiagnostic(x)); return; }
         ValidationErrors = JsonWire.Array(e, "validationErrors", CedarPolicyDiagnostic.Read);
         ValidationWarnings = JsonWire.Array(e, "validationWarnings", CedarPolicyDiagnostic.Read);
     }
+    /// <summary>Throws when strict validation did not complete without errors. Carries the originating result rather than implying a transport failure.</summary>
+    /// <exception cref="CedarValidationException">Validation did not complete cleanly. The exception carries the originating result.</exception>
+    public void EnsureValid()
+    {
+        if (IsValid) return;
+        throw new CedarValidationException(this,
+            !IsSuccess ? $"Policy validation failed to run: {string.Join("; ", Errors)}"
+            : $"Policy validation found {ValidationErrors.Count} error(s): {string.Join("; ", ValidationErrors)}");
+    }
+    /// <inheritdoc />
+    public override string ToString() => !IsSuccess
+        ? $"Failure: {string.Join("; ", Errors)}"
+        : IsValid ? $"Valid (warnings: {ValidationWarnings.Count})" : $"Invalid: {string.Join("; ", ValidationErrors)}";
 }
 
 /// <summary>The result of a Cedar parsing or data-validation check.</summary>
@@ -123,13 +190,48 @@ public sealed class CedarCheckResult
     public bool IsSuccess { get; }
     /// <summary>Errors that prevented the check from passing.</summary>
     public IReadOnlyList<CedarDiagnostic> Errors { get; }
+    /// <summary>Upstream warnings reported alongside the check.</summary>
+    public IReadOnlyList<CedarDiagnostic> Warnings { get; }
     /// <summary>A copied, unmodified upstream JSON value.</summary>
     public JsonElement Raw { get; }
     internal CedarCheckResult(JsonElement e)
     {
         Raw = e.Clone(); IsSuccess = JsonWire.Success(e);
         Errors = IsSuccess ? System.Array.Empty<CedarDiagnostic>() : JsonWire.Array(e, "errors", x => new CedarDiagnostic(x));
+        Warnings = JsonWire.OptionalArray(e, "warnings", x => new CedarDiagnostic(x));
     }
+    /// <inheritdoc />
+    public override string ToString() => IsSuccess ? $"Pass (warnings: {Warnings.Count})" : $"Fail: {string.Join("; ", Errors)}";
+}
+
+/// <summary>Combined schema-based validation of scope, context, and entities for one request.</summary>
+public sealed class CedarFullRequestCheckResult
+{
+    /// <summary>Result of scope-variable validation.</summary>
+    public CedarCheckResult Scope { get; }
+    /// <summary>Result of context validation.</summary>
+    public CedarCheckResult Context { get; }
+    /// <summary>Result of entities validation.</summary>
+    public CedarCheckResult Entities { get; }
+    /// <summary>Creates a combined result. Success is always derived from the three parts.</summary>
+    public CedarFullRequestCheckResult(CedarCheckResult scope, CedarCheckResult context, CedarCheckResult entities)
+    {
+        Scope = scope ?? throw new ArgumentNullException(nameof(scope));
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        Entities = entities ?? throw new ArgumentNullException(nameof(entities));
+    }
+    /// <summary>True only when scope, context, and entities all passed.</summary>
+    public bool IsSuccess => Scope.IsSuccess && Context.IsSuccess && Entities.IsSuccess;
+    /// <summary>All errors across scope, context, and entities.</summary>
+    public IReadOnlyList<CedarDiagnostic> AllErrors =>
+        Scope.Errors.Concat(Context.Errors).Concat(Entities.Errors).ToArray();
+    /// <summary>All warnings across scope, context, and entities.</summary>
+    public IReadOnlyList<CedarDiagnostic> AllWarnings =>
+        Scope.Warnings.Concat(Context.Warnings).Concat(Entities.Warnings).ToArray();
+    /// <inheritdoc />
+    public override string ToString() => IsSuccess
+        ? "Request valid (scope, context, entities passed)."
+        : $"Request invalid: {string.Join("; ", AllErrors)}";
 }
 
 /// <summary>Identity reported by the loaded bridge, together with its verified asset path and hash.</summary>
@@ -143,7 +245,15 @@ public sealed class CedarCheckResult
 /// <param name="NativePath">Absolute path of the loaded native library.</param>
 /// <param name="Sha256">SHA-256 hash of the loaded native library.</param>
 public sealed record CedarVersion(uint AbiVersion, string SdkVersion, string LanguageVersion, string BridgeVersion,
-    string RustVersion, string Target, IReadOnlyList<string> Features, string NativePath, string Sha256);
+    string RustVersion, string Target, IReadOnlyList<string> Features, string NativePath, string Sha256)
+{
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var hash = string.IsNullOrEmpty(Sha256) ? "" : Sha256.Length <= 12 ? Sha256 : Sha256[..12];
+        return $"Cedar {SdkVersion} (language {LanguageVersion}), bridge {BridgeVersion}, ABI {AbiVersion}, {Target} [{string.Join(",", Features)}] {hash}";
+    }
+}
 
 /// <summary>A native loading, ABI, transport, or result-decoding failure. Never represents a Cedar Deny.</summary>
 public sealed class CedarBridgeException : Exception
@@ -152,6 +262,26 @@ public sealed class CedarBridgeException : Exception
     public uint? Status { get; }
     /// <summary>Creates a native bridge failure with an optional status and underlying cause.</summary>
     public CedarBridgeException(string message, uint? status = null, Exception? innerException = null) : base(message, innerException) => Status = status;
+}
+
+/// <summary>An evaluated Cedar authorization that did not satisfy the caller's requirement. Carries the full result; it is not a bridge or transport failure.</summary>
+public sealed class CedarAuthorizationException : Exception
+{
+    /// <summary>The Cedar result that failed the requirement.</summary>
+    public CedarAuthorizationResult Result { get; }
+    /// <summary>Creates an authorization requirement failure with the originating result.</summary>
+    public CedarAuthorizationException(CedarAuthorizationResult result, string message) : base(message)
+        => Result = result ?? throw new ArgumentNullException(nameof(result));
+}
+
+/// <summary>A completed schema validation that found invalid policies or failed to run. Carries the full result; it is not a bridge or transport failure.</summary>
+public sealed class CedarValidationException : Exception
+{
+    /// <summary>The Cedar validation result that failed the requirement.</summary>
+    public CedarValidationResult Result { get; }
+    /// <summary>Creates a validation requirement failure with the originating result.</summary>
+    public CedarValidationException(CedarValidationResult result, string message) : base(message)
+        => Result = result ?? throw new ArgumentNullException(nameof(result));
 }
 
 /// <summary>A Cedar JSON call envelope was rejected before evaluation. It is a caller input error, not a Cedar Deny.</summary>

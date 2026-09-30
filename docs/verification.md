@@ -41,6 +41,22 @@ minimum supported Windows or macOS version or a minimum Linux glibc version.
 | Deployment modes | NativeAOT, trimming, single-file and other RIDs require their own package consumer evidence. |
 | Hufu | Hufu-specific fail-closed adapter, authority versioning and resource enforcement are separate consumer work. |
 
+## 2026-09-30 graduation pass (source-level, Windows x64)
+
+The graduation review findings F1-F8 were addressed in source. Local evidence:
+
+| Check | Evidence |
+| --- | --- |
+| Managed build | `dotnet build CedarSharp.slnx -c Release`: zero warnings/errors with `IsAotCompatible`, trim and single-file analyzers enabled on the library. |
+| Managed suite | 32/32 on .NET 8.0.31 and 32/32 on .NET 10.0.12, Windows x64. Adds strict malformed-response decoding, Cedar-grammar UID acceptance against the engine, empty-id legality, relative native override, typed-input negatives, and telemetry-privacy checks. |
+| AOT smoke | `samples/CedarSharp.AotSmoke` builds warning-free under the AOT analyzer and runs framework-dependent on Windows x64 (`CedarSharp NativeAOT smoke passed`). |
+| Native | Unchanged pinned asset (SHA-256 `efa39f0413ca2e6eb6ad7884f033bbae6021d91a58be3aaac26cb86b35784b32`). |
+
+Not yet executed for this pass: three-RID CI at the resulting commit, NativeAOT
+compile/run (no local C++ linker), oldest-OS baselines, fuzzing, and Hufu
+integration. The CI workflow now publishes and runs the NativeAOT smoke per RID
+and carries `.snupkg` symbols; treat those as configured until a run passes.
+
 The wrapper deliberately preserves Cedar's Allow with policy diagnostics. It
 never turns a parsing, bridge or loading failure into a successful decision.
 The tests establish semantic and boundary behavior for their fixtures; they do

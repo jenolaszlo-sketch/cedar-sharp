@@ -21,6 +21,8 @@ if ($hostOs -cne $contract.Os -or $hostArch -cne $contract.Arch) {
     throw "Package smoke for $RuntimeIdentifier requires $($contract.Os)/$($contract.Arch), found $hostOs/$hostArch."
 }
 $env:CEDARSHARP_EXPECT_TARGET = $contract.Target
+# A clean consumer must not inherit a developer's native override.
+Remove-Item Env:CEDARSHARP_NATIVE_PATH -ErrorAction SilentlyContinue
 $package = (Resolve-Path -LiteralPath $PackagePath).Path
 $packageDirectory = Split-Path -Parent $package
 $smokeSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../samples/CedarSharp.Smoke'))
@@ -33,15 +35,19 @@ $config = Join-Path $work 'NuGet.Config'
 $source = [System.Security.SecurityElement]::Escape($packageDirectory)
 $configContents = @"
 <?xml version="1.0" encoding="utf-8"?>
-<configuration><packageSources><clear/><add key="cedarsharp-artifact" value="$source" /></packageSources></configuration>
+<configuration><packageSources><clear/><add key="cedarsharp-artifact" value="$source" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources></configuration>
 "@
 [IO.File]::WriteAllText($config, $configContents, [Text.UTF8Encoding]::new($false))
 $packageFile = [IO.Path]::GetFileName($package)
 if ($packageFile -notmatch '^CedarSharp\.(.+)\.nupkg$') { throw "Unexpected package filename: $packageFile" }
 $packageVersion = $Matches[1]
 $project = Join-Path $projectDirectory 'CedarSharp.Smoke.csproj'
-& dotnet restore $project --configfile $config --packages $packageCache "-p:CedarSharpPackageVersion=$packageVersion"
+$publishDirectory = Join-Path $work 'publish'
+& dotnet restore $project --configfile $config --packages $packageCache -r $RuntimeIdentifier "-p:CedarSharpPackageVersion=$packageVersion"
 if ($LASTEXITCODE -ne 0) { throw "Clean packaged restore failed for $RuntimeIdentifier / $Framework." }
-& dotnet run --project $project --configuration Release --framework $Framework "-p:CedarSharpPackageVersion=$packageVersion" --no-restore
-if ($LASTEXITCODE -ne 0) { throw "Clean packaged consumer failed for $RuntimeIdentifier / $Framework." }
-Write-Host "Packaged CedarSharp consumer passed: $RuntimeIdentifier / $Framework."
+& dotnet publish $project --configuration Release --framework $Framework -r $RuntimeIdentifier --self-contained false `
+    --no-restore -o $publishDirectory "-p:CedarSharpPackageVersion=$packageVersion"
+if ($LASTEXITCODE -ne 0) { throw "RID publish failed for $RuntimeIdentifier / $Framework." }
+& dotnet (Join-Path $publishDirectory 'CedarSharp.Smoke.dll')
+if ($LASTEXITCODE -ne 0) { throw "Clean published consumer failed for $RuntimeIdentifier / $Framework." }
+Write-Host "Packaged CedarSharp RID-published consumer passed: $RuntimeIdentifier / $Framework."

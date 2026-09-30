@@ -78,9 +78,13 @@ transitive dependency license notices. Cedar 4.13.0's published crates omit
 the workspace license text, so staging includes the exact pinned repository
 LICENSE and NOTICE. `defmt-parser` omits its license file and uses its declared
 Apache-2.0 option from that standard license text. The loader checks hash and expected
-identity, then queries live versions/features before authorization. It loads
-only the assembly-adjacent native asset or its RID-specific runtimes directory.
-There is no automatic download, global search, or implicit override.
+identity, then queries live versions/features before authorization. It resolves
+the asset under `AppContext.BaseDirectory` (package-adjacent or its
+`runtimes/<rid>/native/` directory), which keeps single-file and NativeAOT
+deployments working. `CEDARSHARP_NATIVE_PATH` selects a self-built or vendored
+asset; relative paths are normalized against the current directory before the
+adjacent manifest is located, and the asset is still hash- and identity-verified.
+There is no automatic download or global search.
 
 Packaging is disabled by default. A local smoke override can pack only the staged Windows asset with a local prerelease version. The normal opt-in build requires all three manifests;
 CI additionally verifies actual package content and clean consumers on all

@@ -18,6 +18,15 @@ and supported runtime identifiers. Do not expose raw pointers to public callers.
 Keep experimental Cedar features and symbolic analysis out of the initial
 runtime unless explicitly required and qualified.
 
+Keep the library trim- and NativeAOT-analyzer clean. Prefer `JsonElement`,
+`JsonNode` and `JsonTypeInfo<T>` paths; annotate reflection-based convenience
+overloads with `RequiresUnreferencedCode`/`RequiresDynamicCode`. Do not route
+native loading through `Assembly.Location`. Reserve `CedarBridgeException` for
+native/ABI/transport failures; use `CedarAuthorizationException` and
+`CedarValidationException` (carrying the result) for decision/validation
+requirements so a Deny or a validation finding is never reported as a bridge
+failure.
+
 Add meaningful native and packaged-consumer tests when behavior exists. Run
 only supported platforms and report untested platforms honestly. Keep package
 publication, remote repository creation, and Hufu integration changes separate

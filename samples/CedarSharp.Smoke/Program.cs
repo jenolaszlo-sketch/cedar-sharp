@@ -25,9 +25,17 @@ if (version.AbiVersion != 1 || version.BridgeVersion != "0.1.0" || version.Langu
     throw new InvalidOperationException("Loaded native identity does not match CedarSharp's pinned baseline.");
 }
 var expectedTarget = Environment.GetEnvironmentVariable("CEDARSHARP_EXPECT_TARGET");
-if (!string.IsNullOrEmpty(expectedTarget) && version.Target != expectedTarget)
+if (!string.IsNullOrEmpty(expectedTarget))
 {
-    throw new InvalidOperationException($"Expected native target {expectedTarget}, received {version.Target}.");
+    if (version.Target != expectedTarget)
+    {
+        throw new InvalidOperationException($"Expected native target {expectedTarget}, received {version.Target}.");
+    }
+    var baseDirectory = Path.GetFullPath(AppContext.BaseDirectory);
+    if (!Path.GetFullPath(version.NativePath).StartsWith(baseDirectory, StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException($"Native asset {version.NativePath} was not loaded from the deployment directory {baseDirectory}.");
+    }
 }
 if (version.SdkVersion != "4.13.0")
 {

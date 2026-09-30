@@ -18,9 +18,10 @@ $resolved = (Resolve-Path -LiteralPath $PackagePath).Path
 $archive = [IO.Compression.ZipFile]::OpenRead($resolved)
 try {
     $entries = @($archive.Entries | ForEach-Object { $_.FullName })
-    $nuspecEntry = @($archive.Entries | Where-Object { $_.FullName.EndsWith('.nuspec', [StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1)
-    if ($nuspecEntry.Count -ne 1) { throw 'Package must contain exactly one nuspec.' }
-    $reader = [IO.StreamReader]::new($nuspecEntry[0].Open())
+    $nuspecEntries = @($archive.Entries | Where-Object { $_.FullName.EndsWith('.nuspec', [StringComparison]::OrdinalIgnoreCase) })
+    if ($nuspecEntries.Count -ne 1) { throw "Package must contain exactly one nuspec, found $($nuspecEntries.Count)." }
+    $nuspecEntry = $nuspecEntries[0]
+    $reader = [IO.StreamReader]::new($nuspecEntry.Open())
     try { [xml] $nuspec = $reader.ReadToEnd() } finally { $reader.Dispose() }
     if ($nuspec.package.metadata.id -cne 'CedarSharp') { throw 'Unexpected package ID.' }
     if ($nuspec.package.metadata.version -cne $ExpectedVersion) { throw 'Unexpected package version.' }

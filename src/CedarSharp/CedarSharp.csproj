@@ -1,20 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
     <PackageId>CedarSharp</PackageId>
-    <Version>0.1.0-preview.1</Version>
+    <Version>0.2.0-preview.1</Version>
     <Title>CedarSharp</Title>
-    <Description>Unofficial .NET wrapper around the Cedar policy engine, preserving authorization diagnostics and validation results.</Description>
+    <Description>Unofficial .NET wrapper around the Cedar policy engine, preserving authorization diagnostics and validation results. Trim- and NativeAOT-compatible.</Description>
     <PackageProjectUrl>https://github.com/jenolaszlo-sketch/cedar-sharp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/jenolaszlo-sketch/cedar-sharp.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>cedar;authorization;policy;access-control;native</PackageTags>
+    <PackageTags>cedar;authorization;policy;access-control;native;aot;trimming</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- Packaging stays opt-in: pass -p:CedarSharpEnablePack=true. Without it the project is not packable by design. -->
     <IsPackable Condition="'$(CedarSharpEnablePack)' != 'true'">false</IsPackable>
     <IsPackable Condition="'$(CedarSharpEnablePack)' == 'true'">true</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <None Include="../../LICENSE" Pack="true" PackagePath="/" />

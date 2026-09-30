@@ -14,6 +14,11 @@ semantics. An Allow with policy errors remains an Allow with policy errors.
 Your application decides whether to reject that result. Hufu's adapter will own
 its stricter decision handling, grants and authority lifecycle separately.
 
+The library is trim- and NativeAOT-compatible. Typed convenience overloads that
+serialize arbitrary CLR objects use reflection and are annotated
+`RequiresUnreferencedCode`/`RequiresDynamicCode`; for AOT use the `JsonElement`
+and `JsonNode` overloads (or `JsonTypeInfo<T>`), which take no reflection path.
+
 ## Usage
 
 ```csharp
@@ -58,12 +63,81 @@ Console.WriteLine(validation.IsValid);
 ```
 
 `CheckPolicies` checks syntax; `ValidatePolicies` performs strict schema-based
-policy validation. `CheckSchema`, `CheckRequest`, `CheckContext`, and
-`CheckEntities` expose separate checks. `CheckRequest` checks the three scope
-identifiers; check context and entities separately. Authorization does not
+policy validation. `CheckSchema`, `CheckRequest` (alias `CheckScope`),
+`CheckContext`, and `CheckEntities` expose separate checks. `CheckRequest` checks
+the three scope identifiers only — use `CheckFullRequest(request, schema)` (or the
+principal/action/resource + context + entities overload) to validate scope,
+context, and entities together. Authorization does not
 implicitly validate policies. Supplying a schema to a request enables
 schema-based entity/context parsing and, by default, request validation.
 `validateRequest: false` disables only request validation.
+
+### Fail-closed enforcement
+
+```csharp
+// Decision alone is not enough: an Allow can carry policy errors.
+if (!result.IsCleanAllow)
+    return Results.Forbid(); // or deny, log result.ToString(), audit result.Raw
+
+result.RequireAllow();    // CedarAuthorizationException unless an error-free Allow
+result.EnsureNoErrors();  // throws on any error/policy-error; accepts a clean Deny
+validation.EnsureValid(); // CedarValidationException unless strict validation passed
+```
+
+`CedarBridgeException` is reserved for native loading, ABI, transport, or
+response-decoding failure. Authorization and validation requirement failures
+throw `CedarAuthorizationException` / `CedarValidationException`, each carrying
+the originating result. No failure becomes a grant or a fabricated denial.
+
+### Typed entities and context (no hand-written escapes)
+
+```csharp
+var alice = CedarEntityUid.Parse("User::\"alice\"");
+var report = new CedarEntityUid("Document", "report");
+
+var request = new CedarAuthorizationRequest(
+    alice,
+    new CedarEntityUid("Action", "read"),
+    report,
+    policies,
+    context: new { trusted = true, ip = CedarValue.Ip("127.0.0.1") },
+    entities: new[]
+    {
+        new CedarEntity(report, new { owner = CedarValue.Entity(alice) }),
+    },
+    schema: schema);
+
+var full = engine.CheckFullRequest(request, schema);
+var batch = engine.AuthorizeBatch(new[] { request }, parallel: true);
+
+// Shorthands: policies from (id, text) tuples and a direct authorize overload.
+var policies = CedarPolicySet.FromPolicies(("read", "permit(principal, action, resource);"));
+var direct = engine.Authorize(alice, new CedarEntityUid("Action", "read"), report, policies);
+```
+
+`CedarPolicySet` and `CedarSchema` have value equality, so they can key caches
+and memoized validation. Every call also emits an `Activity` on the
+`CedarSharp` `ActivitySource` (`cedarsharp.authorize`,
+`cedarsharp.validate_policies`) with decision, error-count, and engine/bridge
+version tags for OpenTelemetry; see `CedarSharpDiagnostics`. Activities never
+export principal/action/resource identities or error text by default; opt in with
+`CedarSharpDiagnostics.IncludeIdentity` / `IncludeErrorDetails` for trusted sinks.
+
+Cedar entity UIDs parse and format Cedar source grammar, not JSON:
+`CedarEntityUid.Parse("Acme::User::\"a\\u{96ea}\"")` and
+`uid.ToString()` produce `Type::"id"` with Cedar escapes. Empty ids are legal;
+the type is validated as a Cedar identifier path.
+
+### Deployment modes
+
+The package supports framework-dependent, self-contained, RID-specific
+publishing, trimming (`PublishTrimmed`), and NativeAOT (`PublishAot`). The loader
+resolves the native asset relative to `AppContext.BaseDirectory`, so single-file
+and AOT deployments should copy `runtimes/<rid>/native/` beside the app (the SDK
+does this by default for RID publishes). `CEDARSHARP_NATIVE_PATH` selects a
+self-built asset and is still hash- and identity-verified; relative paths resolve
+against the current directory. The repository's `samples/CedarSharp.AotSmoke`
+project is published and executed under NativeAOT for each supported RID in CI.
 
 Inputs are immutable copied snapshots. `CedarPolicySet.FromJson` supports the
 upstream `staticPolicies`, `templates`, and `templateLinks` representation;
@@ -79,6 +153,8 @@ per evaluation. The native library lives for the process lifetime; no disposal
 is required. There are no cancellation or hard resource-deadline guarantees.
 The bridge limits wire input to 16 MiB and output to 64 MiB; these are not limits
 on Cedar's intermediate memory usage or execution time.
+`CEDARSHARP_NATIVE_PATH` may point at a directory or file holding a self-built
+native asset; it is still hash- and identity-verified before loading.
 
 ## Build and native CI
 
@@ -96,9 +172,10 @@ dotnet run --project tests/CedarSharp.Tests -c Release -f net10.0
 
 The CI matrix builds and executes on Windows x64, Linux x64, and macOS ARM64,
 then assembles one NuGet archive and runs clean package consumers on each OS.
-macOS uses a native ARM64 runner. Linux qualification targets the CI runner's
-glibc baseline; musl, Windows ARM64 and macOS x64 are not supported by this slice.
-NativeAOT, trimming, and single-file publishing are not yet qualified.
+It also publishes and runs the NativeAOT smoke per RID. macOS uses a native ARM64
+runner. Linux qualification targets the CI runner's glibc baseline; musl, Windows
+ARM64 and macOS x64 are not supported by this slice. Oldest-OS baselines are not
+yet qualified; see [docs/verification.md](docs/verification.md).
 
 For a Windows-only local package smoke check after staging win-x64, use a
 `-local` version and the explicit test override:

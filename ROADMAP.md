@@ -25,11 +25,34 @@ See [verification evidence](docs/verification.md) for commands and platform resu
 - [x] Run and pass the three-platform native and package CI matrix.
 - [x] Verify the dependency/license inventory in the assembled CI package.
 - [ ] Qualify minimum OS and glibc versions beyond the CI runners.
-- [ ] Establish a versioned release and NuGet publication process.
-- [ ] Prove trimming, NativeAOT and single-file publishing before advertising them.
+- [x] Establish a versioned release and NuGet publication process (manual
+      trusted-publishing workflow; first preview published by the maintainer).
+- [x] Advertise trimming and NativeAOT: the library is `IsAotCompatible` and CI
+      publishes and runs a NativeAOT consumer per RID. Single-file is exercised
+      by RID publish; oldest-OS qualification remains open.
 
 The initial Windows, Linux and macOS runner matrix is qualified for the tested
-environments. No binaries have been published.
+environments. A `0.1.0-preview.1` package was published; the graduation pass
+below prepares `0.2.0-preview.1`.
+
+## M2.5: graduation hardening (2026-09-30)
+
+- [x] Strict response decoding: required arrays and malformed answers fail closed.
+- [x] Cedar-grammar entity UID parse/format with differential tests against Cedar.
+- [x] Distinct `CedarAuthorizationException`/`CedarValidationException`; clean Deny
+      accepted by `EnsureNoErrors`, rejected by `RequireAllow`.
+- [x] Legal empty Cedar ids; null rejected.
+- [x] Relative `CEDARSHARP_NATIVE_PATH` resolves the adjacent manifest; tests and
+      packaged consumers isolate the override.
+- [x] Duplicate policy ids, null parents/entities and total `PolicyIds` formatting.
+- [x] Trim/NativeAOT-compatible public surface with `JsonTypeInfo`/`JsonElement`
+      paths; reflection helpers annotated.
+- [x] SourceLink symbols, hardened archive verification, RID-published consumer.
+- [ ] Public API compatibility baseline and exception/nullability freeze.
+- [ ] Minimum Windows/macOS/glibc baselines executed on oldest intended systems.
+- [ ] Wire-boundary fuzzing and process-level memory instrumentation.
+- [ ] Hufu fail-closed adapter validated end-to-end.
+
 
 ## M3: consumers and performance
 

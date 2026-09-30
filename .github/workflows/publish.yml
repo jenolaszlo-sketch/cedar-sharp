@@ -55,12 +55,15 @@ jobs:
           $version = [string] $project.Project.PropertyGroup.Version
           if ([string]::IsNullOrWhiteSpace($version)) { throw 'Package version is missing from the project.' }
           $package = "artifacts/packages/CedarSharp.$version.nupkg"
-          $allPackages = @(Get-ChildItem -LiteralPath artifacts/packages -Filter '*.nupkg' -File)
+          $allPackages = @(Get-ChildItem -LiteralPath artifacts/packages -File | Where-Object { $_.Extension -eq '.nupkg' })
           if ($allPackages.Count -ne 1 -or $allPackages[0].Name -cne "CedarSharp.$version.nupkg") {
             throw "Expected exactly one CedarSharp.$version.nupkg, found: $($allPackages.Name -join ', ')"
           }
+          $symbols = "artifacts/packages/CedarSharp.$version.snupkg"
+          if (-not (Test-Path -LiteralPath $symbols)) { throw "Expected matching symbols package $symbols." }
           ./eng/Verify-NuGetPackage.ps1 -PackagePath $package -ExpectedVersion $version
           "path=$package" >> $env:GITHUB_OUTPUT
+          "symbols=$symbols" >> $env:GITHUB_OUTPUT
       - name: NuGet login (OIDC to temporary API key)
         id: login
         uses: NuGet/login@v1
@@ -71,3 +74,8 @@ jobs:
           NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
           PACKAGE_PATH: ${{ steps.package.outputs.path }}
         run: dotnet nuget push "$PACKAGE_PATH" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"
+      - name: Push symbols to NuGet
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+          SYMBOLS_PATH: ${{ steps.package.outputs.symbols }}
+        run: dotnet nuget push "$SYMBOLS_PATH" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"

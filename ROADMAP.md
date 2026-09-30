@@ -53,15 +53,18 @@ on a duplicate symbols upload; see [verification](docs/verification.md).
 - [x] Trim/NativeAOT-compatible public surface with `JsonTypeInfo`/`JsonElement`
       paths; reflection helpers annotated.
 - [x] SourceLink symbols, hardened archive verification, RID-published consumer.
-- [ ] Public API compatibility baseline and exception/nullability freeze.
-- [ ] Minimum Windows/macOS/glibc baselines executed on oldest intended systems.
-- [ ] Wire-boundary fuzzing and process-level memory instrumentation.
+- [x] Public API compatibility baseline against `0.2.0-preview.1`, plus the
+      documented result/exception/nullability contract and integration checks.
+- [ ] Older Windows/macOS/glibc baselines: excluded from the 1.0 support claim.
+      The exact CI runner environments are the chosen deployment baselines.
+- [ ] Run the new deterministic wire-mutation suite on all CI RIDs and the
+      Linux Valgrind definite-leak check in the 1.0 candidate CI.
 - [ ] Hufu fail-closed adapter validated end-to-end.
 
-The public API contract, platform baselines and native-boundary stress work
-remain stable-release gates, not preview-package gates. Single-file support can
-stay excluded until tested. Hufu integration is consumer work in a separate
-repository and does not block the generic wrapper's release.
+Stable release still requires the candidate's complete CI run, including the
+new native checks. Single-file support and older OS/glibc versions stay excluded
+until tested. Hufu integration is consumer work in a separate repository and
+does not block the generic wrapper's release.
 
 ## M3: consumers and performance
 

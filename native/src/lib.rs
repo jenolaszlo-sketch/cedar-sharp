@@ -437,6 +437,52 @@ mod tests {
     }
 
     #[test]
+    fn adversarial_wire_inputs_return_owned_json_without_panics() {
+        let cases = std::env::var("CEDARSHARP_WIRE_CASES")
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(4096);
+        let seeds = [
+            b"{}".as_slice(),
+            b"[]".as_slice(),
+            b"null".as_slice(),
+            b"{\"staticPolicies\":\"permit(principal, action, resource);\"}".as_slice(),
+            b"{\"entities\":[]}".as_slice(),
+            b"{\"context\":{}}".as_slice(),
+            b"\xff\x00\xc0\xaf".as_slice(),
+        ];
+        let mut state = 0xceda_4130_5eed_f00du64;
+        for case in 0..cases {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            let operation = match state % 10 {
+                0..=7 => (state % 8) as u32,
+                _ => 999,
+            };
+            let mut input = seeds[(state as usize / 17) % seeds.len()].to_vec();
+            if case % 3 == 0 {
+                input.truncate((state as usize / 31) % (input.len() + 1));
+            } else if case % 3 == 1 {
+                input.extend_from_slice(&state.to_le_bytes());
+            } else if !input.is_empty() {
+                let index = (state as usize / 23) % input.len();
+                input[index] = (state >> 32) as u8;
+            }
+            let mut output = Buffer::EMPTY;
+            let status = unsafe {
+                cedarsharp_call_v1(operation, input.as_ptr(), input.len(), &mut output)
+            };
+            assert!(status <= 4 && status != 3, "case {case}: status {status}");
+            assert!(!output.data.is_null() && output.len > 0, "case {case}: empty output");
+            let bytes = unsafe { slice::from_raw_parts(output.data, output.len) };
+            let parsed = serde_json::from_slice::<Value>(bytes);
+            unsafe { cedarsharp_free_v1(output) };
+            assert!(parsed.is_ok(), "case {case}: malformed output: {parsed:?}");
+        }
+    }
+
+    #[test]
     fn concurrent_calls_do_not_share_authorization_state() {
         let cases: Vec<_> = (0..16)
             .map(|index| {

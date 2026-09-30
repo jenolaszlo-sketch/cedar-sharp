@@ -237,6 +237,23 @@ Add("validation ensure and version formatting", () => {
     Throws<CedarValidationException>(() => bad.EnsureValid());
     Assert(engine.GetVersion().ToString().Contains("Cedar 4.13.0"));
 });
+Add("batch snapshots IReadOnlyList inputs", () => {
+    var permit = Request("permit(principal, action, resource);");
+    var deny = Request("");
+    IReadOnlyList<CedarAuthorizationRequest> requests = new EnumerationOnlyRequests(permit, deny);
+    var results = engine.AuthorizeBatch(requests, parallel: true);
+    Assert(results.Count == 2 && results[0].Decision == CedarDecision.Allow && results[1].Decision == CedarDecision.Deny);
+});
+Add("public nullability contract", () => {
+    var context = new System.Reflection.NullabilityInfoContext();
+    System.Reflection.NullabilityState State(Type type, string property) =>
+        context.Create(type.GetProperty(property)!).ReadState;
+    Assert(State(typeof(CedarAuthorizationRequest), nameof(CedarAuthorizationRequest.Schema)) == System.Reflection.NullabilityState.Nullable);
+    Assert(State(typeof(CedarAuthorizationRequest), nameof(CedarAuthorizationRequest.Policies)) == System.Reflection.NullabilityState.NotNull);
+    Assert(State(typeof(CedarAuthorizationResult), nameof(CedarAuthorizationResult.Errors)) == System.Reflection.NullabilityState.NotNull);
+    Assert(State(typeof(CedarDiagnostic), nameof(CedarDiagnostic.Help)) == System.Reflection.NullabilityState.Nullable);
+    Assert(State(typeof(CedarAuthorizationException), nameof(CedarAuthorizationException.Result)) == System.Reflection.NullabilityState.NotNull);
+});
 Add("concurrent isolation and repeated output ownership", () => {
     Parallel.For(0, 500, i => {
         var expect = i % 2 == 0 ? CedarDecision.Allow : CedarDecision.Deny;
@@ -349,3 +366,13 @@ foreach (var (name, test) in tests)
 }
 Console.WriteLine($"{tests.Count - failed}/{tests.Count} tests passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}.");
 return failed == 0 ? 0 : 1;
+
+sealed class EnumerationOnlyRequests : IReadOnlyList<CedarAuthorizationRequest>
+{
+    private readonly CedarAuthorizationRequest[] requests;
+    public EnumerationOnlyRequests(params CedarAuthorizationRequest[] requests) => this.requests = requests;
+    public int Count => requests.Length;
+    public CedarAuthorizationRequest this[int index] => throw new InvalidOperationException("Requests must be snapshotted before evaluation.");
+    public IEnumerator<CedarAuthorizationRequest> GetEnumerator() => ((IEnumerable<CedarAuthorizationRequest>)requests).GetEnumerator();
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+}

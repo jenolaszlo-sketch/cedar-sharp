@@ -51,15 +51,15 @@ public sealed class CedarEngine
     {
         ArgumentNullException.ThrowIfNull(requests);
         if (maxDegreeOfParallelism is <= 0) throw new ArgumentOutOfRangeException(nameof(maxDegreeOfParallelism));
-        var list = requests as IReadOnlyList<CedarAuthorizationRequest> ?? requests.ToList();
+        var list = requests.ToArray();
         foreach (var request in list) ArgumentNullException.ThrowIfNull(request, nameof(requests));
-        var results = new CedarAuthorizationResult[list.Count];
+        var results = new CedarAuthorizationResult[list.Length];
         if (parallel)
         {
             var options = new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism ?? -1 };
-            Parallel.For(0, list.Count, options, i => results[i] = Authorize(list[i]));
+            Parallel.For(0, list.Length, options, i => results[i] = Authorize(list[i]));
         }
-        else for (var i = 0; i < list.Count; i++) results[i] = Authorize(list[i]);
+        else for (var i = 0; i < list.Length; i++) results[i] = Authorize(list[i]);
         return Array.AsReadOnly(results);
     }
     /// <summary>Validates policies against a schema in Cedar strict mode.</summary>

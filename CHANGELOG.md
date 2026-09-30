@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0 — release candidate
+
+- Freeze the public result, exception, and nullable API contract against the
+  published `0.2.0-preview.1` binary baseline. The .NET SDK validates future
+  packages during `dotnet pack`.
+- Snapshot all batch request sequences before evaluation, including mutable
+  `IReadOnlyList<T>` implementations.
+- Exercise 4,096 deterministic adversarial native wire cases on each CI RID and
+  check a shorter Linux run under Valgrind for definite leaks.
+- Scope qualified deployment to the tested Windows Server 2025 x64, Ubuntu
+  24.04 x64, and macOS 15 ARM64 CI environments on .NET 8 and .NET 10.
+
+This version is prepared for release; publication and the final CI evidence
+will be recorded after those gates pass.
+
 ## 0.2.0-preview.1 — published 2026-09-30
 
 - Reject malformed native responses instead of interpreting missing fields as a

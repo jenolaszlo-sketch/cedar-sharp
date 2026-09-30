@@ -118,3 +118,24 @@ The wrapper deliberately preserves Cedar's Allow with policy diagnostics. It
 never turns a parsing, bridge or loading failure into a successful decision.
 The tests establish semantic and boundary behavior for their fixtures; they do
 not establish Hufu resource confinement or a general policy implication proof.
+
+## 1.0.0 candidate (local checks; CI pending)
+
+The 1.0 candidate fixes `AuthorizeBatch` so every enumerable, including an
+`IReadOnlyList`, is snapshotted before evaluation. The public contract is
+recorded in [api-contract.md](api-contract.md). The .NET SDK package validation
+gate compares both target frameworks with the published `0.2.0-preview.1`
+package. A local Windows-only `dotnet pack` completed that validation for the
+`1.0.0` candidate; it is not the three-RID distributable archive.
+
+On Windows x64, 7/7 pinned Rust tests passed, including 4,096 deterministic
+mutated wire inputs per run with owned JSON output and no native panic status.
+The managed suite passed 34/34 on .NET 8.0.31 and 34/34 on .NET 10.0.12. The
+new tests cover batch snapshot behavior and representative nullable API
+annotations. The Linux Valgrind definite-leak check and complete three-RID
+package/consumer matrix still require a committed CI run.
+
+The chosen 1.0 deployment scope is Windows Server 2025 x64, Ubuntu 24.04 x64,
+and macOS 15 ARM64 as tested by CI, on .NET 8 and .NET 10. This is not a claim
+about earlier OS releases, lower glibc versions, musl, other architectures, or
+single-file publishing.

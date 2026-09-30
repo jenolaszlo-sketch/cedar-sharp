@@ -1,5 +1,10 @@
 # CedarSharp
 
+[![NuGet](https://img.shields.io/nuget/v/CedarSharp)](https://www.nuget.org/packages/CedarSharp)
+[![CI](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/workflows/ci.yml/badge.svg)](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/jenolaszlo-sketch/cedar-sharp)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-512BD4)](https://dotnet.microsoft.com/)
+
 CedarSharp is an unofficial .NET 8 / .NET 10 wrapper around the Rust [Cedar policy engine](https://github.com/cedar-policy/cedar). It calls the original `cedar-policy` implementation through a small native bridge. The Cedar project and its contributors created and maintain Cedar; this repository provides the .NET wrapper and does not claim authorship of the original engine or policy language.
 
 **[`1.0.0` is published on NuGet](https://www.nuget.org/packages/CedarSharp/1.0.0).**

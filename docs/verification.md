@@ -1,10 +1,12 @@
 # Verification and release gates
 
-Updated 2026-09-29. The wrapper passed local Windows x64 testing and a complete
-CI matrix on Windows x64, Linux x64 and macOS ARM64. CI produced and verified a
-three-RID package; no package or release has been published.
+Updated 2026-09-30. `0.1.0-preview.1` is published on
+[NuGet](https://www.nuget.org/packages/CedarSharp/0.1.0-preview.1) after
+[publish run #1](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36648819227)
+passed. The `0.2.0-preview.1` source at `a09d6f6` passed the complete CI matrix
+and is ready for a separate manual publish run. It is not yet published.
 
-## Executed on Windows x64
+## Initial local Windows x64 baseline
 
 | Check | Evidence |
 | --- | --- |
@@ -17,7 +19,7 @@ three-RID package; no package or release has been published.
 The first native build used an isolated repository-local MSVC/Windows SDK and
 Rust toolchain because this workstation lacked the C++ linker. Build inputs are
 reproducible in the repository; the downloaded tools and binaries are ignored.
-No toolchain or package was installed system-wide or published.
+No toolchain was installed system-wide by the initial local verification.
 
 ## Completed CI distribution gate
 
@@ -36,9 +38,9 @@ minimum supported Windows or macOS version or a minimum Linux glibc version.
 | Remaining area | Evidence needed before claim |
 | --- | --- |
 | Minimum platform versions | Inspect produced binaries and test oldest intended Windows, macOS and glibc baselines before claiming broader support. |
-| Release | Manual trusted-publishing workflow is configured; NuGet policy and `NUGET_USER` secret must be set, then the workflow run must pass before claiming a published release. |
+| Release | `0.1.0-preview.1` is published. `0.2.0-preview.1` requires its own successful manual publish run before it is called published. |
 | Safety | Add process-level memory/leak instrumentation, stress beyond the current repeated calls, and adversarial malformed wire fuzzing before making stronger native robustness claims. C-ABI callers must honor readable pointer/length and single-free preconditions. |
-| Deployment modes | NativeAOT, trimming, single-file and other RIDs require their own package consumer evidence. |
+| Deployment modes | NativeAOT smoke passed on all three CI RIDs at `a09d6f6`. AOT and trimming analyzers are enabled. Single-file publish, other RIDs and older OS baselines require separate evidence. |
 | Hufu | Hufu-specific fail-closed adapter, authority versioning and resource enforcement are separate consumer work. |
 
 ## 2026-09-30 graduation pass (source-level, Windows x64)
@@ -52,10 +54,36 @@ The graduation review findings F1-F8 were addressed in source. Local evidence:
 | AOT smoke | `samples/CedarSharp.AotSmoke` builds warning-free under the AOT analyzer and runs framework-dependent on Windows x64 (`CedarSharp NativeAOT smoke passed`). |
 | Native | Unchanged pinned asset (SHA-256 `efa39f0413ca2e6eb6ad7884f033bbae6021d91a58be3aaac26cb86b35784b32`). |
 
-Not yet executed for this pass: three-RID CI at the resulting commit, NativeAOT
-compile/run (no local C++ linker), oldest-OS baselines, fuzzing, and Hufu
-integration. The CI workflow now publishes and runs the NativeAOT smoke per RID
-and carries `.snupkg` symbols; treat those as configured until a run passes.
+## Committed graduation CI
+
+[CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333)
+passed on `a09d6f6` on 2026-09-30. Its three native jobs built and tested
+Windows x64, Linux x64, and macOS ARM64 assets, ran the managed suites on .NET 8
+and .NET 10, and published and executed the NativeAOT smoke for each RID. The
+pack job assembled and verified the three-RID `0.2.0-preview.1` archive and
+uploaded the package and matching symbols archive. All six clean package
+consumers passed. I downloaded the CI artifact and independently reran
+`eng/Verify-NuGetPackage.ps1` against a clean archive of `a09d6f6`; the
+three-RID, ABI, binary-hash and license checks passed. I also ran the downloaded
+archive through the isolated Windows x64 packaged consumer on .NET 8 and .NET 10;
+both RID-published consumers passed. The exact archives are:
+
+| Archive | SHA-256 |
+| --- | --- |
+| `CedarSharp.0.2.0-preview.1.nupkg` | `0425112f01684501bfc9bf2902110cbb69c9cc8c0af0c319d50b535f3f1c599c` |
+| `CedarSharp.0.2.0-preview.1.snupkg` | `053ccaddcc4d185ce5469fe546e171e845a33021b83c751d70383844d06ae865` |
+
+The symbols archive contains the `net8.0` and `net10.0` PDBs. The run's package artifact digest is
+`sha256:2b5772bf9defb80645ed52be6f39bbdcf898bb250bd42664d6032a6086d3c597`;
+this identifies the GitHub artifact container, not the `.nupkg` bytes.
+The manual publishing workflow rebuilds and tests its own package at the
+selected commit; these checksums describe CI #5's artifact, not a future
+publishing run's output.
+
+This qualifies the tested runner environments and the CI artifact. It does not
+qualify older Windows/macOS releases or a lower Linux glibc baseline. Wire
+fuzzing, process-level memory instrumentation, a frozen public API contract and
+Hufu integration remain open. Hufu integration is a separate consumer task.
 
 The wrapper deliberately preserves Cedar's Allow with policy diagnostics. It
 never turns a parsing, bridge or loading failure into a successful decision.

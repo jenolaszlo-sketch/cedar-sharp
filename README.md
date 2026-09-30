@@ -2,10 +2,11 @@
 
 CedarSharp is an unofficial .NET 8 / .NET 10 wrapper around the Rust [Cedar policy engine](https://github.com/cedar-policy/cedar). It calls the original `cedar-policy` implementation through a small native bridge. The Cedar project and its contributors created and maintain Cedar; this repository provides the .NET wrapper and does not claim authorship of the original engine or policy language.
 
-**Status: Windows x64, Linux x64 and macOS ARM64 CI passed.** Authorization, strict policy
-validation, policy/schema parsing, request/context/entity checks, structured
+**Status: `0.2.0-preview.1` is ready for manual release.** [CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333)
+passed at commit `a09d6f6` on Windows x64, Linux x64 and macOS ARM64.
+Authorization, strict policy validation, policy/schema parsing, request/context/entity checks, structured
 diagnostics, and loaded native version discovery are implemented. Platform and
-verification evidence is tracked in [docs/verification.md](docs/verification.md).
+verification evidence is tracked in [docs/verification.md](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/docs/verification.md).
 Packaging remains opt-in and requires verified native assets for every RID. Do not
 infer native support from a successful managed build.
 
@@ -138,6 +139,7 @@ does this by default for RID publishes). `CEDARSHARP_NATIVE_PATH` selects a
 self-built asset and is still hash- and identity-verified; relative paths resolve
 against the current directory. The repository's `samples/CedarSharp.AotSmoke`
 project is published and executed under NativeAOT for each supported RID in CI.
+Single-file publishing has not been separately exercised by CI.
 
 Inputs are immutable copied snapshots. `CedarPolicySet.FromJson` supports the
 upstream `staticPolicies`, `templates`, and `templateLinks` representation;
@@ -203,14 +205,12 @@ push or CI run does not publish. The workflow publishes the version in
 `src/CedarSharp/CedarSharp.csproj`; update that version before starting a new
 release. NuGet will reject an already published version.
 
-Before the first run, add a NuGet.org trusted publishing policy for the package
-owner with repository owner `jenolaszlo-sketch`, repository `cedar-sharp`, and
-workflow file `publish.yml` (filename only). Leave the policy's environment
-empty. In this GitHub repository, set the `NUGET_USER` Actions secret to the
-NuGet.org **profile name** that owns or can publish `CedarSharp`, not the email
-address or an API key. Then choose **Actions → Publish to NuGet → Run workflow**
-on `main`. The workflow requests a short-lived API key only after verification
-has passed. See the [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing).
+Trusted publishing was exercised for `0.1.0-preview.1` in
+[publish run #1](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36648819227).
+To release a new version, choose **Actions → Publish to NuGet → Run workflow**
+on `main` after reviewing the version and [release evidence](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/docs/verification.md).
+The workflow requests a short-lived API key only after verification has passed.
+See the [changelog](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/CHANGELOG.md) and [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing).
 
 Native assets and their SHA-256 manifests must be deployed together. The loader
 uses only an adjacent package asset or `runtimes/<rid>/native/`, verifies the

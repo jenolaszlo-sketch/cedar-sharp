@@ -1,5 +1,9 @@
 # CedarSharp graduation review and implementation handoff
 
+> Historical review of the pre-`a09d6f6` tree. Findings F1-F8 were addressed
+> in `a09d6f6`, and [CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333)
+> passed at that commit. See [current verification](verification.md) for release status.
+
 Reviewed: 2026-09-30. Repository: `C:\Users\Laszlos\source\repos\CedarSharp`.
 Base: `a95774ae764cc27560ce6418ce5f6579a53516a0` on `main`.
 

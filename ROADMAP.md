@@ -1,6 +1,6 @@
 # CedarSharp roadmap
 
-Updated 2026-09-29. Implemented source is distinct from qualified native behavior.
+Updated 2026-09-30. Implemented source is distinct from qualified native behavior.
 See [verification evidence](docs/verification.md) for commands and platform results.
 
 ## M0: design and baseline
@@ -28,12 +28,15 @@ See [verification evidence](docs/verification.md) for commands and platform resu
 - [x] Establish a versioned release and NuGet publication process (manual
       trusted-publishing workflow; first preview published by the maintainer).
 - [x] Advertise trimming and NativeAOT: the library is `IsAotCompatible` and CI
-      publishes and runs a NativeAOT consumer per RID. Single-file is exercised
-      by RID publish; oldest-OS qualification remains open.
+      publishes and runs a NativeAOT consumer per RID. Oldest-OS qualification
+      remains open.
+- [ ] Exercise single-file publishing separately; RID publish alone is not a
+      single-file test.
 
-The initial Windows, Linux and macOS runner matrix is qualified for the tested
-environments. A `0.1.0-preview.1` package was published; the graduation pass
-below prepares `0.2.0-preview.1`.
+The Windows, Linux and macOS runner matrix is qualified for the tested runner
+environments, including NativeAOT smoke at commit `a09d6f6` in
+[CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333).
+`0.1.0-preview.1` is published; `0.2.0-preview.1` is prepared for manual release.
 
 ## M2.5: graduation hardening (2026-09-30)
 
@@ -53,6 +56,10 @@ below prepares `0.2.0-preview.1`.
 - [ ] Wire-boundary fuzzing and process-level memory instrumentation.
 - [ ] Hufu fail-closed adapter validated end-to-end.
 
+The public API contract, platform baselines and native-boundary stress work
+remain stable-release gates, not preview-package gates. Single-file support can
+stay excluded until tested. Hufu integration is consumer work in a separate
+repository and does not block the generic wrapper's release.
 
 ## M3: consumers and performance
 

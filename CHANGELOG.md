@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — release candidate
+## 1.0.0 — qualified 2026-09-30
 
 - Freeze the public result, exception, and nullable API contract against the
   published `0.2.0-preview.1` binary baseline. The .NET SDK validates future
@@ -12,8 +12,11 @@
 - Scope qualified deployment to the tested Windows Server 2025 x64, Ubuntu
   24.04 x64, and macOS 15 ARM64 CI environments on .NET 8 and .NET 10.
 
-This version is prepared for release; publication and the final CI evidence
-will be recorded after those gates pass.
+The full native, NativeAOT, package, and six-consumer matrix passed in
+[CI run 36725177455](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36725177455).
+The independent package verifier passed on the downloaded three-RID archive.
+Valgrind found zero definite leaks; its possible-loss report is recorded in
+[verification](docs/verification.md).
 
 ## 0.2.0-preview.1 — published 2026-09-30
 

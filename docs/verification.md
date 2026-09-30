@@ -119,7 +119,7 @@ never turns a parsing, bridge or loading failure into a successful decision.
 The tests establish semantic and boundary behavior for their fixtures; they do
 not establish Hufu resource confinement or a general policy implication proof.
 
-## 1.0.0 candidate (local checks; CI pending)
+## 1.0.0 candidate and completed CI
 
 The 1.0 candidate fixes `AuthorizeBatch` so every enumerable, including an
 `IReadOnlyList`, is snapshotted before evaluation. The public contract is
@@ -132,8 +132,26 @@ On Windows x64, 7/7 pinned Rust tests passed, including 4,096 deterministic
 mutated wire inputs per run with owned JSON output and no native panic status.
 The managed suite passed 34/34 on .NET 8.0.31 and 34/34 on .NET 10.0.12. The
 new tests cover batch snapshot behavior and representative nullable API
-annotations. The Linux Valgrind definite-leak check and complete three-RID
-package/consumer matrix still require a committed CI run.
+annotations.
+
+[CI run 36725177455](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36725177455)
+passed at `4db8081`. All three native jobs ran 7/7 Rust tests, both managed
+target frameworks, and NativeAOT smoke. The package job assembled and verified
+the three-RID `1.0.0` archive; all six clean package consumers passed. I
+downloaded the package artifact and reran `eng/Verify-NuGetPackage.ps1` against
+a clean archive of `4db8081`; its RID inventory, ABI, binary hashes, and
+license inventories passed. The CI archives have these SHA-256 values:
+
+| Archive | SHA-256 |
+| --- | --- |
+| `CedarSharp.1.0.0.nupkg` | `f01a361e9ff1b656a38fc21d3eaa1d3e6dd67cc3aefd22bbbc6d27fde6f85542` |
+| `CedarSharp.1.0.0.snupkg` | `17f5f2cc1470e4b5c596440f70c06f9049c0f3cfaa1c04d2fabf36a7b9e09b8c` |
+
+The Linux Valgrind run exercised 256 deterministic wire cases, reported zero
+definitely lost bytes and zero errors, and reported 12,624 bytes in 50 blocks
+as possibly lost. The recorded allocation traces include the pinned Cedar
+engine's extension initialization. This check does not prove absence of all
+native leaks or establish a bound on long-running memory use.
 
 The chosen 1.0 deployment scope is Windows Server 2025 x64, Ubuntu 24.04 x64,
 and macOS 15 ARM64 as tested by CI, on .NET 8 and .NET 10. This is not a claim

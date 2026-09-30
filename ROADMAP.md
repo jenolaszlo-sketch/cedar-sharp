@@ -57,14 +57,15 @@ on a duplicate symbols upload; see [verification](docs/verification.md).
       documented result/exception/nullability contract and integration checks.
 - [ ] Older Windows/macOS/glibc baselines: excluded from the 1.0 support claim.
       The exact CI runner environments are the chosen deployment baselines.
-- [ ] Run the new deterministic wire-mutation suite on all CI RIDs and the
-      Linux Valgrind definite-leak check in the 1.0 candidate CI.
+- [x] Run the deterministic wire-mutation suite on all CI RIDs and the Linux
+      Valgrind definite-leak check in the 1.0 candidate
+      [CI run](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36725177455).
 - [ ] Hufu fail-closed adapter validated end-to-end.
 
-Stable release still requires the candidate's complete CI run, including the
-new native checks. Single-file support and older OS/glibc versions stay excluded
-until tested. Hufu integration is consumer work in a separate repository and
-does not block the generic wrapper's release.
+The 1.0 candidate passed the complete CI distribution gate. Single-file
+support and older OS/glibc versions stay excluded until tested. Hufu integration
+is consumer work in a separate repository and does not block the generic
+wrapper's release.
 
 ## M3: consumers and performance
 

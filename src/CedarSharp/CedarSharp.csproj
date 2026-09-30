@@ -20,7 +20,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageValidationBaselineVersion>0.2.0-preview.1</PackageValidationBaselineVersion>
+    <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion>
     <!-- Packaging stays opt-in: pass -p:CedarSharpEnablePack=true. Without it the project is not packable by design. -->
     <IsPackable Condition="'$(CedarSharpEnablePack)' != 'true'">false</IsPackable>
     <IsPackable Condition="'$(CedarSharpEnablePack)' == 'true'">true</IsPackable>

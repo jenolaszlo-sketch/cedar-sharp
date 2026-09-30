@@ -157,3 +157,34 @@ The chosen 1.0 deployment scope is Windows Server 2025 x64, Ubuntu 24.04 x64,
 and macOS 15 ARM64 as tested by CI, on .NET 8 and .NET 10. This is not a claim
 about earlier OS releases, lower glibc versions, musl, other architectures, or
 single-file publishing.
+
+## Published `1.0.0` stable release
+
+[Publish run 36727306968](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36727306968)
+passed at tagged commit `68ffdaf`: three native/NativeAOT jobs, package
+validation and archive checks, all six clean consumers, final archive check,
+NuGet OIDC login, and package push. Both the
+[package and symbols](https://www.nuget.org/packages/CedarSharp/1.0.0) are
+public. The [GitHub release](https://github.com/jenolaszlo-sketch/cedar-sharp/releases/tag/v1.0.0)
+points to the exact published source commit.
+
+I downloaded the release workflow's archives and independently reran the
+three-RID, ABI, hash, and license verifier against a clean `v1.0.0` source
+archive. The release archives have these SHA-256 checksums:
+
+| Archive | SHA-256 |
+| --- | --- |
+| CI-uploaded `CedarSharp.1.0.0.nupkg` | `e1b892b9753a19ef03ae4ef61427dd2b36d4cd1059e8936ce089d64f56bde7a5` |
+| `CedarSharp.1.0.0.snupkg` | `5d0f4a6cba88f7d0555744eb76393c1a8fc4544e15947a87f12dfd7ad48d8197` |
+
+NuGet.org repository-signs the public `.nupkg`, so its downloaded SHA-256 is
+`99cc3659e750f3d5187d7b8c35e84359811a7af1247b3673d893eafc679bf835`.
+`dotnet nuget verify --all` passed for that public package. All 740 original
+archive entries match the release-run package byte for byte; NuGet added only
+`.signature.p7s`. The public `.snupkg` has the same SHA-256 as the release-run
+symbols archive.
+
+After publication, `PackageValidationBaselineVersion` was advanced to the
+published `1.0.0` package. A local `dotnet pack` with the Windows-only smoke
+override passed SDK package validation against that stable baseline; this
+post-release metadata change does not alter the tagged package.

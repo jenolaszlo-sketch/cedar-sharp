@@ -36,9 +36,9 @@ See [verification evidence](docs/verification.md) for commands and platform resu
 The Windows, Linux and macOS runner matrix is qualified for the tested runner
 environments, including NativeAOT smoke at commit `a09d6f6` in
 [CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333).
-`0.1.0-preview.1` and `0.2.0-preview.1` are published. The latter's release
-workflow passed all verification gates and uploaded both archives, then failed
-on a duplicate symbols upload; see [verification](docs/verification.md).
+`0.1.0-preview.1`, `0.2.0-preview.1`, and stable `1.0.0` are published. The
+`1.0.0` release workflow passed every verification and upload job; see
+[verification](docs/verification.md).
 
 ## M2.5: graduation hardening (2026-09-30)
 
@@ -71,7 +71,8 @@ wrapper's release.
 
 - [ ] Integrate in Penghou.Hufu.Cedar as a separate task; preserve strict host semantics.
 - [ ] Measure realistic repeated authorization before adding immutable parsed handles.
-- [ ] Establish stable API compatibility baselines and an engine upgrade procedure.
+- [x] Establish the stable `1.0.0` package as the API compatibility baseline.
+- [ ] Document and exercise a Cedar engine upgrade procedure.
 
 ## M4: optional analysis
 

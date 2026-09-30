@@ -2,9 +2,11 @@
 
 CedarSharp is an unofficial .NET 8 / .NET 10 wrapper around the Rust [Cedar policy engine](https://github.com/cedar-policy/cedar). It calls the original `cedar-policy` implementation through a small native bridge. The Cedar project and its contributors created and maintain Cedar; this repository provides the .NET wrapper and does not claim authorship of the original engine or policy language.
 
-**Version `1.0.0` passed the full [CI matrix](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36725177455).**
-See [NuGet](https://www.nuget.org/packages/CedarSharp) for published versions
-and the [verification record](docs/verification.md) for release evidence.
+**[`1.0.0` is published on NuGet](https://www.nuget.org/packages/CedarSharp/1.0.0).**
+Its [release workflow](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36727306968)
+passed the full native, NativeAOT, package, and clean-consumer matrix. See the
+[GitHub release](https://github.com/jenolaszlo-sketch/cedar-sharp/releases/tag/v1.0.0)
+and [verification record](docs/verification.md) for release evidence.
 
 Authorization, strict policy validation, policy/schema parsing,
 request/context/entity checks, structured diagnostics, and loaded native

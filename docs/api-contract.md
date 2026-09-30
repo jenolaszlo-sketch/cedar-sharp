@@ -1,9 +1,9 @@
 # CedarSharp 1.0 API contract
 
-The published `0.2.0-preview.1` package is the binary compatibility baseline
-for 1.0. SDK package validation runs during every normal `dotnet pack` for both
-`net8.0` and `net10.0`. Future releases should move the baseline to the latest
-published stable version. Changes to public signatures, target frameworks,
+The published `0.2.0-preview.1` package was the binary compatibility baseline
+for the 1.0 release candidate. The published `1.0.0` package is now the baseline
+for future builds. SDK package validation runs during every normal `dotnet pack`
+for both `net8.0` and `net10.0`. Changes to public signatures, target frameworks,
 nullable annotations, or the behavior below require an explicit review and a
 versioning decision. Package validation catches binary breaks; the integration
 suite and this contract cover behavior it cannot infer.

@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — qualified 2026-09-30
+## 1.0.0 — published 2026-09-30
 
 - Freeze the public result, exception, and nullable API contract against the
   published `0.2.0-preview.1` binary baseline. The .NET SDK validates future
@@ -17,6 +17,10 @@ The full native, NativeAOT, package, and six-consumer matrix passed in
 The independent package verifier passed on the downloaded three-RID archive.
 Valgrind found zero definite leaks; its possible-loss report is recorded in
 [verification](docs/verification.md).
+The [publication workflow](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36727306968)
+passed at `68ffdaf`; the package, symbols, and
+[GitHub release](https://github.com/jenolaszlo-sketch/cedar-sharp/releases/tag/v1.0.0)
+are available.
 
 ## 0.2.0-preview.1 — published 2026-09-30
 

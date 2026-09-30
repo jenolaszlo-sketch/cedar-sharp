@@ -1,10 +1,13 @@
 # Verification and release gates
 
-Updated 2026-09-30. `0.1.0-preview.1` is published on
-[NuGet](https://www.nuget.org/packages/CedarSharp/0.1.0-preview.1) after
-[publish run #1](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36648819227)
-passed. The `0.2.0-preview.1` source at `a09d6f6` passed the complete CI matrix
-and is ready for a separate manual publish run. It is not yet published.
+Updated 2026-09-30. Both
+[`0.1.0-preview.1`](https://www.nuget.org/packages/CedarSharp/0.1.0-preview.1)
+and [`0.2.0-preview.1`](https://www.nuget.org/packages/CedarSharp/0.2.0-preview.1)
+are published on NuGet. `0.2.0-preview.1` has a downloadable symbols package.
+Its [release run](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36664097224)
+passed all verification jobs but was marked failed by a second, duplicate
+symbols upload after both packages had already been accepted. Do not rerun
+publishing for this immutable version.
 
 ## Initial local Windows x64 baseline
 
@@ -38,7 +41,7 @@ minimum supported Windows or macOS version or a minimum Linux glibc version.
 | Remaining area | Evidence needed before claim |
 | --- | --- |
 | Minimum platform versions | Inspect produced binaries and test oldest intended Windows, macOS and glibc baselines before claiming broader support. |
-| Release | `0.1.0-preview.1` is published. `0.2.0-preview.1` requires its own successful manual publish run before it is called published. |
+| Release | Both preview versions are listed on NuGet. Release run #2's failed conclusion reflects a duplicate symbols push after successful uploads. Future releases use the corrected workflow. |
 | Safety | Add process-level memory/leak instrumentation, stress beyond the current repeated calls, and adversarial malformed wire fuzzing before making stronger native robustness claims. C-ABI callers must honor readable pointer/length and single-free preconditions. |
 | Deployment modes | NativeAOT smoke passed on all three CI RIDs at `a09d6f6`. AOT and trimming analyzers are enabled. Single-file publish, other RIDs and older OS baselines require separate evidence. |
 | Hufu | Hufu-specific fail-closed adapter, authority versioning and resource enforcement are separate consumer work. |
@@ -84,6 +87,32 @@ This qualifies the tested runner environments and the CI artifact. It does not
 qualify older Windows/macOS releases or a lower Linux glibc baseline. Wire
 fuzzing, process-level memory instrumentation, a frozen public API contract and
 Hufu integration remain open. Hufu integration is a separate consumer task.
+
+## Published `0.2.0-preview.1` release
+
+[Publish run #2](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36664097224)
+ran at `456b7aa`. The release check, all three native and NativeAOT jobs, the
+package job, all six clean consumers and the final archive verifier passed.
+The NuGet login succeeded. `dotnet nuget push` accepted both the `.nupkg` and
+its adjacent `.snupkg`; the package and symbols are listed on
+[NuGet](https://www.nuget.org/packages/CedarSharp/0.2.0-preview.1).
+The subsequent explicit symbols push received HTTP 409 because that same symbols
+version was already pending validation, making the overall workflow conclusion
+`failure`. The extra push has been removed for future versions. Do not rerun this
+version's publication.
+
+I downloaded the release run's package artifact and reran the archive verifier
+against a clean archive of `456b7aa`; it passed. The uploaded files have these
+SHA-256 checksums:
+
+| Archive | SHA-256 |
+| --- | --- |
+| `CedarSharp.0.2.0-preview.1.nupkg` | `c00bdfcea825a21333e787479648a9fc268ac2dd84f3220ed5af16ecdf5ec378` |
+| `CedarSharp.0.2.0-preview.1.snupkg` | `5a0db77f15b8047fdd74c9fb9f59a741679c9a8d563b92e915d5a0ccc6fa29ee` |
+
+The published package README is the immutable snapshot from `456b7aa` and
+still says the release was prepared. This repository record reflects the
+observed publication.
 
 The wrapper deliberately preserves Cedar's Allow with policy diagnostics. It
 never turns a parsing, bridge or loading failure into a successful decision.

@@ -2,11 +2,17 @@
 
 CedarSharp is an unofficial .NET 8 / .NET 10 wrapper around the Rust [Cedar policy engine](https://github.com/cedar-policy/cedar). It calls the original `cedar-policy` implementation through a small native bridge. The Cedar project and its contributors created and maintain Cedar; this repository provides the .NET wrapper and does not claim authorship of the original engine or policy language.
 
-**Status: `0.2.0-preview.1` is ready for manual release.** [CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333)
-passed at commit `a09d6f6` on Windows x64, Linux x64 and macOS ARM64.
-Authorization, strict policy validation, policy/schema parsing, request/context/entity checks, structured
-diagnostics, and loaded native version discovery are implemented. Platform and
-verification evidence is tracked in [docs/verification.md](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/docs/verification.md).
+**Status: [`0.2.0-preview.1`](https://www.nuget.org/packages/CedarSharp/0.2.0-preview.1) is published.**
+The [release workflow](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36664097224)
+passed its native, package and consumer gates at commit `456b7aa` on Windows x64,
+Linux x64 and macOS ARM64. Its final job reported failure after uploading the
+package and symbols because it attempted to upload the symbols twice; see the
+[verification record](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/docs/verification.md).
+
+Authorization, strict policy validation, policy/schema parsing,
+request/context/entity checks, structured diagnostics, and loaded native
+version discovery are implemented.
+
 Packaging remains opt-in and requires verified native assets for every RID. Do not
 infer native support from a successful managed build.
 
@@ -206,9 +212,12 @@ push or CI run does not publish. The workflow publishes the version in
 release. NuGet will reject an already published version.
 
 Trusted publishing was exercised for `0.1.0-preview.1` in
-[publish run #1](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36648819227).
+[publish run #1](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36648819227)
+and for `0.2.0-preview.1` in
+[publish run #2](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36664097224).
 To release a new version, choose **Actions → Publish to NuGet → Run workflow**
-on `main` after reviewing the version and [release evidence](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/docs/verification.md).
+on `main` after advancing the version and reviewing the
+[release evidence](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/docs/verification.md).
 The workflow requests a short-lived API key only after verification has passed.
 See the [changelog](https://github.com/jenolaszlo-sketch/cedar-sharp/blob/main/CHANGELOG.md) and [NuGet trusted publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing).
 

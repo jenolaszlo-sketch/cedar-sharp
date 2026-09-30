@@ -36,7 +36,9 @@ See [verification evidence](docs/verification.md) for commands and platform resu
 The Windows, Linux and macOS runner matrix is qualified for the tested runner
 environments, including NativeAOT smoke at commit `a09d6f6` in
 [CI #5](https://github.com/jenolaszlo-sketch/cedar-sharp/actions/runs/36659617333).
-`0.1.0-preview.1` is published; `0.2.0-preview.1` is prepared for manual release.
+`0.1.0-preview.1` and `0.2.0-preview.1` are published. The latter's release
+workflow passed all verification gates and uploaded both archives, then failed
+on a duplicate symbols upload; see [verification](docs/verification.md).
 
 ## M2.5: graduation hardening (2026-09-30)
 

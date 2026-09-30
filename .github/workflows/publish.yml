@@ -63,7 +63,6 @@ jobs:
           if (-not (Test-Path -LiteralPath $symbols)) { throw "Expected matching symbols package $symbols." }
           ./eng/Verify-NuGetPackage.ps1 -PackagePath $package -ExpectedVersion $version
           "path=$package" >> $env:GITHUB_OUTPUT
-          "symbols=$symbols" >> $env:GITHUB_OUTPUT
       - name: NuGet login (OIDC to temporary API key)
         id: login
         uses: NuGet/login@v1
@@ -73,9 +72,5 @@ jobs:
         env:
           NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
           PACKAGE_PATH: ${{ steps.package.outputs.path }}
+        # dotnet nuget push uploads the adjacent matching .snupkg with the .nupkg.
         run: dotnet nuget push "$PACKAGE_PATH" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"
-      - name: Push symbols to NuGet
-        env:
-          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
-          SYMBOLS_PATH: ${{ steps.package.outputs.symbols }}
-        run: dotnet nuget push "$SYMBOLS_PATH" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"

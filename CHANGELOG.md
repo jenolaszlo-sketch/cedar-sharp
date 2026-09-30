@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0-preview.1 — prepared, not published
+## 0.2.0-preview.1 — published 2026-09-30
 
 - Reject malformed native responses instead of interpreting missing fields as a
   clean authorization or validation result.
